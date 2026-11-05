@@ -1,0 +1,6 @@
+delay_reason,orders,share_pct,avg_extra_days
+On time,58973,98.29,-3.1
+Port congestion,376,0.63,3.8
+Strike/lockout,325,0.54,7.7
+Customs delay,209,0.35,3.6
+Supplier delay,117,0.2,3.2

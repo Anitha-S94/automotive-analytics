@@ -1,0 +1,20 @@
+// Supply chain measures — paste into Power BI DAX
+OTIF % = AVERAGE ( erp_orders[otif] )
+Late % = AVERAGE ( erp_orders[late] )
+Avg Lead-Time Variance (days) = AVERAGE ( erp_orders[actual_lead_days] ) - AVERAGE ( erp_orders[promised_lead_days] )
+Total Spend € = SUM ( erp_orders[order_value_eur] )
+SLA Breach = IF ( AVERAGE ( erp_orders[otif] ) < MAX ( suppliers[sla_otif_target] ), "BELOW SLA", "MEETS SLA" )
+Short-Ship % = AVERAGEX ( erp_orders, IF ( erp_orders[in_full] = FALSE, 1, 0 ) )
+Severe Delay Flag = erp_orders[actual_lead_days] > erp_orders[promised_lead_days] + 7
+Holding Cost Impact € (+10%) =
+    VAR daily = DIVIDE ( SUM ( erp_orders[order_value_eur] ), 365 )
+    VAR lt = AVERAGE ( erp_orders[actual_lead_days] )
+    RETURN lt * 0.10 * daily * 0.22 / 365
+Holding Cost Impact € (+20%) =
+    VAR daily = DIVIDE ( SUM ( erp_orders[order_value_eur] ), 365 )
+    VAR lt = AVERAGE ( erp_orders[actual_lead_days] )
+    RETURN lt * 0.20 * daily * 0.22 / 365
+Extra Pipeline Inventory € (+10%) =
+    VAR daily = DIVIDE ( SUM ( erp_orders[order_value_eur] ), 365 )
+    RETURN AVERAGE ( erp_orders[actual_lead_days] ) * 0.10 * daily
+Copper Price Δ% = DIVIDE ( MAX ( lme_metal_prices[copper_usd_t] ), MIN ( lme_metal_prices[copper_usd_t] ) ) - 1
