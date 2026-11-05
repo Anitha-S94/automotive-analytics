@@ -133,6 +133,73 @@ function line(el, series, o) {
   s += '</svg>';
   if (el) el.innerHTML = s; return s;
 }
+
+function treemap(el, o) {
+  // squarified-ish treemap: proportional rectangles, label + value + share
+  const W = 460, H = 300, m = {l: 8, r: 8, t: 36, b: 8};
+  const total = o.values.reduce((a, b) => a + b, 0);
+  const pal = ['#1F4E79', '#2E75B6', '#C55A11', '#7F7F7F', '#BF8F00', '#548235'];
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + o.title + '">';
+  s += '<text x="' + m.l + '" y="24" font-size="17" font-weight="700" fill="#111">' + o.title + '</text>';
+  // simple slice layout: rows proportional to value
+  let y = m.t;
+  const innerH = H - m.t - m.b;
+  o.values.forEach((v, i) => {
+    const h = innerH * v / total;
+    s += '<rect class="bar-rect" data-i="' + i + '" x="' + m.l + '" y="' + y + '" width="' + (W - m.l - m.r) + '" height="' + Math.max(h - 3, 14) + '" rx="5" fill="' + pal[i % pal.length] + '">' +
+         '<title>' + o.labels[i] + ': ' + v.toFixed(1) + (o.unit || '') + ' (' + (100 * v / total).toFixed(1) + '%) — click to drill</title></rect>';
+    s += '<text x="' + (m.l + 10) + '" y="' + (y + Math.max(h - 3, 14) / 2 + 5) + '" font-size="15" font-weight="700" fill="#fff">' + o.labels[i] + ' — ' + v.toFixed(0) + (o.unit || '') + ' (' + (100 * v / total).toFixed(0) + '%)</text>';
+    y += h;
+  });
+  s += '</svg>';
+  if (el) {
+    el.innerHTML = s;
+    el.querySelectorAll('.bar-rect').forEach(r => r.addEventListener('click', () => { if (o.onDrill) o.onDrill(o.labels[+r.dataset.i]); }));
+  }
+  return s;
+}
+function ribbon(el, data, years) {
+  // rank-shift ribbon: lanes per region, band width = revenue, color shifts with rank
+  const regions = [...new Set(data.map(d => d.region))];
+  const W = 920, H = 320, m = {l: 110, r: 20, t: 40, b: 40};
+  const pal = ['#1F4E79', '#2E75B6', '#C55A11', '#7F7F7F', '#BF8F00', '#548235'];
+  const colW = (W - m.l - m.r) / years.length;
+  const maxRev = Math.max(...data.map(d => d.revenue_eur_m));
+  const laneH = (H - m.t - m.b) / regions.length;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Revenue rank ribbon by region">';
+  s += '<text x="' + m.l + '" y="24" font-size="17" font-weight="700" fill="#111">Region rank ribbon — band thickness = revenue, color = rank (dark = #1)</text>';
+  years.forEach((y, yi) => {
+    s += '<text x="' + (m.l + yi * colW + colW / 2) + '" y="' + (H - m.b + 22) + '" font-size="14" text-anchor="middle" font-weight="600" fill="#111">' + y + '</text>';
+    const col = data.filter(d => d.year === y).sort((a, b) => a.revenue_rank - b.revenue_rank);
+    col.forEach((d, ri) => {
+      const h = Math.max((H - m.t - m.b) * d.revenue_eur_m / maxRev, 6);
+      const yc = m.t + (H - m.t - m.b) / 2 + (ri - (col.length - 1) / 2) * laneH * 0.9;
+      // conditional formatting color by rank: rank1 dark navy -> last light gray
+      const shade = pal[Math.min(ri, pal.length - 1)];
+      s += '<rect class="bar-rect" data-region="' + d.region + '" x="' + (m.l + yi * colW + 3) + '" y="' + (yc - h / 2) + '" width="' + (colW - 6) + '" height="' + h + '" rx="4" fill="' + shade + '" opacity="' + (0.55 + 0.45 * d.revenue_rank / col.length) + '">' +
+           '<title>' + d.region + ' ' + y + ': rank #' + d.revenue_rank + ', ' + d.revenue_eur_m.toFixed(0) + ' M€ — click to drill</title></rect>';
+    });
+  });
+  regions.forEach((r, i) => {
+    s += '<text x="' + (m.l - 8) + '" y="' + (m.t + i * laneH + laneH / 2 + 5) + '" font-size="13" text-anchor="end" fill="#111">' + r + '</text>';
+  });
+  s += '</svg>';
+  if (el) {
+    el.innerHTML = s;
+    el.querySelectorAll('.bar-rect').forEach(r => r.addEventListener('click', () => { if (window._ribbonDrill) window._ribbonDrill(r.dataset.region); }));
+  }
+  return s;
+}
+function slicer(el, items, onPick) {
+  // horizontal pill slicer: single-select buttons
+  el.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap">' + items.map((it, i) =>
+    '<button class="slicer-btn" data-i="' + i + '" style="font-size:15px;font-weight:600;padding:8px 16px;border-radius:20px;border:2px solid #1F4E79;background:' + (i === 0 ? '#1F4E79' : '#fff') + ';color:' + (i === 0 ? '#fff' : '#1F4E79') + ';cursor:pointer">' + it + '</button>').join('') + '</div>';
+  el.querySelectorAll('.slicer-btn').forEach(b => b.addEventListener('click', () => {
+    el.querySelectorAll('.slicer-btn').forEach(x => { x.style.background = '#fff'; x.style.color = '#1F4E79'; });
+    b.style.background = '#1F4E79'; b.style.color = '#fff';
+    if (onPick) onPick(items[+b.dataset.i]);
+  }));
+}
 function table(el, cols, rows) {
   const s = '<table><thead><tr>' + cols.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>' +
     rows.map(r => '<tr>' + cols.map(c => '<td>' + (r[c] ?? '') + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
@@ -174,7 +241,8 @@ bodyA = """
   <div class="panel"><h3>Key figures</h3><div class="cards" id="kA1"></div></div>
   <div class="grid g3" style="margin-top:16px">
     <div class="panel"><h3>Operating margin vs 15% target</h3><div id="gA1"></div></div>
-    <div class="panel" style="grid-column:span 2"><h3>Revenue by plant (click a bar to drill through)</h3><div id="bA1"></div><div class="drill-hint">⤵ click a bar → Page 3 drillthrough</div></div>
+    <div class="panel" style="grid-column:span 2"><h3>Revenue by plant (click a bar to drill through)</h3><div id="bA1"></div><div class="drill-hint">⤵ click a bar → Page 3 drillthrough</div>
+    <h3 style="margin-top:14px">Slicer — highlight plant</h3><div id="sA1"></div></div>
   </div>
 </section>
 <section class="page" id="p2">
@@ -198,9 +266,13 @@ cards(document.getElementById('kA1'), [
   {{k:'Operating profit {last_y} — EUR m', v:last.op_profit_eur_m.toFixed(0), d:'margin ' + last.op_margin_pct.toFixed(1) + '%'}},
   {{k:'Units sold {last_y}', v:last.units.toLocaleString(), d:'CAPEX ' + last.capex_eur_m.toFixed(0) + ' EUR m'}}]);
 gauge(document.getElementById('gA1'), {{title:'Operating margin {last_y} %', value:last.op_margin_pct, target:15, max:40, unit:'%'}});
+// conditional formatting: color by performance vs group average
 const plants = [...new Set(FP.map(r=>r.plant))];
 const rev26 = plants.map(p=>{{const r=FP.find(x=>x.plant===p && x.year==={last_y}); return r?r.revenue_eur_m:0;}});
-bar(document.getElementById('bA1'), {{labels:plants, values:rev26, title:'Revenue {last_y} by plant — EUR m', unit:' M€', onDrill: drillPlant}});
+const avgRev = rev26.reduce((a,b)=>a+b,0)/rev26.length;
+const palCF = v => v >= avgRev*1.15 ? '#1F4E79' : v >= avgRev ? '#2E75B6' : v >= avgRev*0.8 ? '#C55A11' : '#7F7F7F';
+bar(document.getElementById('bA1'), {{labels:plants, values:rev26, colors:rev26.map(palCF), title:'Revenue {last_y} by plant — EUR m (color = vs avg)', unit:' M€', onDrill: drillPlant}});
+slicer(document.getElementById('sA1'), plants, name => {{ state.sel=name; }});
 cards(document.getElementById('kA2'), [
   {{k:'OTIF {int(ly.year)}', v:'{ly.otif_pct:.1f}%', d:'SLA target 95%'}},
   {{k:'Avg lead time', v:'{ly.avg_lead_days:.1f} d', d:'variance {ly.lt_variance:+.1f} d'}},
@@ -236,6 +308,8 @@ function drillMaterial(name) {{
 sal_y = pd.read_csv(PROC / "rpt_sales_yearly.csv")
 sal_r = pd.read_csv(PROC / "rpt_sales_by_region.csv")
 sal_m = pd.read_csv(ROOT / "data" / "parsed" / "regional_sales.csv")
+rank = pd.read_csv(PROC / "rpt_region_rank.csv")
+sent_y = pd.read_csv(PROC / "rpt_sentiment_by_year.csv")
 sent_r = pd.read_csv(PROC / "rpt_sentiment_by_region.csv")
 sent_o = pd.read_csv(PROC / "rpt_sentiment_overall.csv").iloc[0]
 rev = pd.read_csv(ROOT / "data" / "parsed" / "reviews_scored.csv")
@@ -249,16 +323,17 @@ bodyB = """
   <div class="panel"><h3>Key figures</h3><div class="cards" id="kB1"></div></div>
   <div class="grid g3" style="margin-top:16px">
     <div class="panel"><h3>Revenue growth vs +5% target</h3><div id="gB1"></div></div>
-    <div class="panel" style="grid-column:span 2"><h3>Revenue by region (click a bar to drill through)</h3><div id="bB1"></div><div class="drill-hint">⤵ click a bar → Page 3 drillthrough</div></div>
+    <div class="panel" style="grid-column:span 2"><h3>Revenue by region — treemap, area = share (click to drill through)</h3><div id="bB1"></div><div class="drill-hint">⤵ click a tile → Page 3 drillthrough</div></div>
   </div>
 </section>
 <section class="page" id="p2">
-  <h2>Page 2 — Customer Sentiment</h2>
+  <h2>Page 2 — Customer Sentiment &amp; Rank Ribbon</h2>
   <div class="panel"><h3>Sentiment KPIs</h3><div class="cards" id="kB2"></div></div>
   <div class="grid g3" style="margin-top:16px">
     <div class="panel"><h3>Positive sentiment vs 60% target</h3><div id="gB2"></div></div>
-    <div class="panel" style="grid-column:span 2"><h3>% positive by region (click to drill)</h3><div id="bB2"></div><div class="drill-hint">⤵ click a bar → Page 3 drillthrough</div></div>
+    <div class="panel" style="grid-column:span 2"><h3>Region rank ribbon (color = rank, thickness = revenue; click to drill)</h3><div id="bB2"></div><div class="drill-hint">⤵ click a band → Page 3 drillthrough</div></div>
   </div>
+  <div class="panel" style="margin-top:16px"><h3>Sentiment trend (line)</h3><div id="lB2"></div></div>
 </section>
 <section class="page" id="drill">
   <h2>Page 3 — Drillthrough</h2>
@@ -267,7 +342,7 @@ bodyB = """
 </section>
 """
 yoy_d = ('yoy %+.1f%%' % sal_y.iloc[-1].yoy_growth_pct) if not pd.isna(sal_y.iloc[-1].yoy_growth_pct) else 'yoy n/a'
-jsB = "const SY=" + j(sal_y) + ", SR=" + j(sal_r) + ", SM=" + j(sal_m) + ", SENR=" + j(sent_r) + ", REV=" + j(rev) + ";\n" + f"""
+jsB = "const SY=" + j(sal_y) + ", SR=" + j(sal_r) + ", SM=" + j(sal_m) + ", SENR=" + j(sent_r) + ", REV=" + j(rev) + ", RK=" + j(rank) + ", SY2=" + j(sent_y) + ";\n" + f"""
 const last = SY[SY.length-1];
 cards(document.getElementById('kB1'), [
   {{k:'Revenue {int(sal_y.iloc[-1].year)} — EUR m', v:'{sal_y.iloc[-1].revenue_eur_m:.0f}', d:'{yoy_d}'}},
@@ -276,13 +351,15 @@ cards(document.getElementById('kB1'), [
 gauge(document.getElementById('gB1'), {{title:'YoY revenue growth {int(sal_y.iloc[-1].year)} %', value:{0 if pd.isna(sal_y.iloc[-1].yoy_growth_pct) else float(sal_y.iloc[-1].yoy_growth_pct)}, target:5, max:15, unit:'%'}});
 const regions = [...new Set(SR.map(r=>r.region))];
 const revR = regions.map(r=>{{const x=SR.find(q=>q.region===r && q.year==={int(sal_y.iloc[-1].year)}); return x?x.revenue_eur_m:0;}});
-bar(document.getElementById('bB1'), {{labels:regions, values:revR, title:'Revenue {int(sal_y.iloc[-1].year)} by region — EUR m', unit:' M€', onDrill: drillRegion}});
+treemap(document.getElementById('bB1'), {{labels:regions, values:revR, title:'Revenue {int(sal_y.iloc[-1].year)} by region — treemap (EUR m, share %)', unit:' M€', onDrill: drillRegion}});
 cards(document.getElementById('kB2'), [
   {{k:'Positive sentiment', v:'{sent_o.pct_positive}%', d:'{int(sent_o.reviews)} reviews'}},
   {{k:'Avg rating', v:'{sent_o.avg_rating} / 5', d:'score {sent_o.avg_sentiment_score}'}},
   {{k:'Negative share', v:'{sent_o.pct_negative}%', d:'watch regions below 40% positive'}}]);
 gauge(document.getElementById('gB2'), {{title:'Positive sentiment %', value:{sent_o.pct_positive}, target:60, max:100, unit:'%'}});
-bar(document.getElementById('bB2'), {{labels:SENR.map(r=>r.region), values:SENR.map(r=>r.pct_positive), title:'% positive reviews by region', unit:'%', onDrill: drillSent}});
+window._ribbonDrill = drillRegion;
+ribbon(document.getElementById('bB2'), RK, [...new Set(RK.map(r=>r.year))].sort());
+line(document.getElementById('lB2'), [{{name:'% positive', x:SY2.map(r=>r.year), values:SY2.map(r=>r.pct_positive)}}], {{title:'Positive sentiment trend by year — %'}});
 function drillRegion(name) {{
   state.back='p1'; state.sel=name;
   const g = SM.filter(r=>r.region===name);
