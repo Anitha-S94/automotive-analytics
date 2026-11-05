@@ -14,7 +14,7 @@ AMD Ryzen AI MAX+ 395 (16C/32T @ 5.2 GHz), 121 GB RAM, Radeon 8060S iGPU,
 
 ## Quick start
 ```bash
-cd /home/lucky/energy-supplychain-analytics
+cd /home/lucky/automotive-analytics
 PY="env -u PYTHONPATH venv/bin/python"     # PYTHONPATH guard: the shell leaks another env
 $PY scripts/gen_automotive.py      # synthetic raw data (CSV/JSON/JSONL/parquet) -> data/raw/
 $PY scripts/parse_raw.py           # flatten nested JSON, parse free-text notes/reviews -> data/parsed/
@@ -52,6 +52,6 @@ refresh + mobile layout.
 
 ## Publish
 ```bash
-git remote add origin https://github.com/<you>/energy-supplychain-analytics.git
+git remote add origin https://github.com/<you>/automotive-analytics.git
 git push -u origin main
 ```
