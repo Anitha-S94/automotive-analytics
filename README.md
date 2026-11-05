@@ -8,9 +8,6 @@ Two BI platforms for a (synthetic) global automotive manufacturer:
 
 All data is **synthetic** (fixed RNG seeds, fully reproducible offline).
 
-## Hardware used
-AMD Ryzen AI MAX+ 395 (16C/32T @ 5.2 GHz), 121 GB RAM, Radeon 8060S iGPU,
-588 GB free NVMe, Ubuntu 26.04. Dedicated venv: `./venv` (Python 3.12, uv).
 
 ## Quick start
 ```bash
