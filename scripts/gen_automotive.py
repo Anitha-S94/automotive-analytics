@@ -10,7 +10,7 @@ import pandas as pd
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-RAW = ROOT / "automotive-analytics" / "data" / "raw"
+RAW = ROOT / "data" / "raw"
 RAW.mkdir(parents=True, exist_ok=True)
 rng = np.random.default_rng(11)
 

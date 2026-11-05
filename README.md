@@ -1,73 +1,57 @@
-# Data Analyst Portfolio Project — Energy Grid & Supply Chain Analytics
+# End-to-End Automotive Analytics Platforms — Portfolio Project
 
-Two usecase-based analytics projects built with **synthetic data** (no real company data):
+Two BI platforms for a (synthetic) global automotive manufacturer:
 
-1. **Renewable Energy & Offshore Substation Load Analysis** (energy grid focus)
-2. **Global Supply Chain & Raw Material Logistics Dashboard**
+- **Project A — Financials & Logistics:** Raw Materials Logistics & Financial
+  Performance (5-year historical analysis 2022–2026 + 2027 forecast).
+- **Project B — Sales & CX:** Regional Sales & Customer Sentiment Analysis.
+
+All data is **synthetic** (fixed RNG seeds, fully reproducible offline).
 
 ## Hardware used
-AMD Ryzen AI MAX+ 395 (16C/32T @ 5.2 GHz), 121 GB RAM, Radeon 8060S iGPU (ROCm),
-588 GB free NVMe, Ubuntu 26.04. Dedicated venv: `./venv` (Python 3.12, uv-created).
+AMD Ryzen AI MAX+ 395 (16C/32T @ 5.2 GHz), 121 GB RAM, Radeon 8060S iGPU,
+588 GB free NVMe, Ubuntu 26.04. Dedicated venv: `./venv` (Python 3.12, uv).
 
 ## Quick start
 ```bash
-cd ~/energy-supplychain-analytics
-source venv/bin/activate
-python scripts/gen_energy.py        # synthetic offshore grid data -> data/raw/
-python scripts/gen_supplychain.py   # synthetic ERP + LME prices  -> data/raw/
-python scripts/build_reports.py     # DuckDB SQL reports          -> data/processed/
-python scripts/make_charts.py       # static dashboard PNGs       -> analysis/
-python scripts/make_html_dashboards.py  # interactive dashboards  -> powerbi/*.html
-python scripts/make_excel.py        # Excel workbook (XVERWEIS)   -> excel/
-python scripts/refresh_and_alert.py # automated refresh + alerts  -> alerts.json
+cd /home/lucky/energy-supplychain-analytics
+PY="env -u PYTHONPATH venv/bin/python"     # PYTHONPATH guard: the shell leaks another env
+$PY scripts/gen_automotive.py      # synthetic raw data (CSV/JSON/JSONL/parquet) -> data/raw/
+$PY scripts/parse_raw.py           # flatten nested JSON, parse free-text notes/reviews -> data/parsed/
+$PY scripts/build_reports.py       # DuckDB SQL cleaning + reports -> data/processed/ (parquet+csv)
+$PY scripts/make_excel.py          # Excel staging workbooks -> excel/
+$PY scripts/make_dashboards.py     # accessible HTML dashboards -> powerbi/
 ```
+Open `powerbi/projectA_dashboard.html` and `powerbi/projectB_dashboard.html` in a browser.
 
 ## Layout
 ```
-data/raw/          synthetic source data (parquet + csv)
-data/processed/    report tables (parquet + csv) — the Power BI import source
-sql/               01 energy profiling, 02 maintenance stress, 03 supply chain, 04 scenario,
-                   05 star/snowflake model + ETL data-quality gates, 06 query optimization
-                   (pre-aggregated tables), 07 reorder-point logic
-scripts/           generators, report builder, chart renderer, Excel workbook builder,
-                   refresh_and_alert.py (automated refresh + alerting)
-analysis/          rendered dashboard PNGs (mirror the Power BI pages)
-powerbi/           DAX measures, Power Query (M) ETL scripts, exact dashboard build spec,
-                   runnable interactive HTML dashboards
-excel/             supply_chain_workbook.xlsx (XVERWEIS lookups, tables, chart)
-docs/              methodology
-automotive-analytics/  second portfolio project: End-to-End Automotive Analytics
-                   Platforms (Project A financials+logistics 5y/forecast, Project B
-                   regional sales + sentiment) — see automotive-analytics/docs/
+data/raw/        synthetic raw sources (incl. nested JSON logs, JSONL reviews, free-text notes)
+data/parsed/     Phase-1 parsed clean tables (gitignored, regenerate via parse_raw.py)
+data/processed/  Phase-3/4 report tables (parquet + csv) — the Power BI import source
+sql/             01 cleaning & star schema (ROW_NUMBER dedup, 5y window views, DQ gates),
+                 02 Project A reports, 03 Project B reports
+scripts/         gen_automotive.py, parse_raw.py, build_reports.py, make_excel.py, make_dashboards.py
+excel/           automotive_financials.xlsx, automotive_sales_cx.xlsx (tables, formats, charts)
+powerbi/         projectA/B_dashboard.html (2 pages each: multicard+gauge+bar/treemap/ribbon
+                 + drillthrough page), BUILD_SPEC_AUTOMOTIVE.md, measures_automotive.dax,
+                 powerquery/ETL_automotive.m
+docs/            PROJECT_SCOPE.md, STORYTELLING_REPORT.md
 ```
 
-## Power BI note (important)
-Everything the Desktop needs is ready here: the processed CSVs in `data/processed/`,
-the DAX measures in `powerbi/*.dax`, and the page-by-page build spec in
-`powerbi/BUILD_SPEC.md`. Open Desktop → Get Data → Text/CSV → follow the spec →
-Publish. `powerbi/INTERACTIVE_DASHBOARDS.html` is a browser version that works
-immediately on this machine.
+## Design principle
+Simplicity & readability everywhere: no wide tables, high-contrast palette (no
+red/green-only cues), body ≥14pt, callouts ≥24pt, Past→Present→Future narrative.
 
-**Scope & how to run:** see `docs/PROJECT_SCOPE.md` (full scope, in/out of scope,
-step-by-step run commands, Power BI steps, deferred GitHub publish).
+## Power BI (Windows)
+Power BI Desktop is Windows-only. Import CSVs from `data/processed/`, load
+`powerbi/powerquery/ETL_automotive.m`, measures from `powerbi/measures_automotive.dax`,
+build pages per `powerbi/BUILD_SPEC_AUTOMOTIVE.md` (each page = multicard + gauge +
+bar/treemap/ribbon, drillthrough page), then publish to workspaces with scheduled
+refresh + mobile layout.
 
-## Use case 1 — Offshore grid load & connector maintenance
-- Dataset: 128,448 hourly rows, 8 export cables (320/525 kV), 2025-01 → 2026-10,
-  weather-driven wind generation, storm derating, overload hours.
-- Deliverables: seasonal/intraday peak profiling (SQL 01), peak-to-average ratios,
-  utilization buckets, maintenance stress index with priority classes (SQL 02).
-
-## Use case 2 — Supply chain & raw materials
-- Dataset: 60,000 ERP order lines, 40 suppliers, 10 port-to-port lanes, daily
-  synthetic LME copper/aluminum index (730 days).
-- Deliverables: OTIF / lead-time variance / stockout risk (SQL 03), route
-  bottlenecks, delay reasons, SLA compliance, +10%/+20% lead-time scenario with
-  holding-cost impact in EUR (SQL 04).
-
-## Publish to GitHub
-Repo is initialized locally. When you are ready:
+## Publish
 ```bash
 git remote add origin https://github.com/<you>/energy-supplychain-analytics.git
 git push -u origin main
 ```
-(GitHub auth to be set up separately — deferred per instruction.)

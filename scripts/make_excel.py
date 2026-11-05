@@ -1,11 +1,11 @@
-"""Excel workbook (XVERWEIS/XLOOKUP + Pivot + dynamic chart) built with openpyxl.
-Output: excel/supply_chain_workbook.xlsx
-Sheets: Orders (data), Suppliers (lookup), Dashboard (XLOOKUP live formulas + chart).
+"""Phase 2: Excel staging workbooks (clean tables, standardized formats) for
+Project A and Project B. Output: excel/automotive_financials.xlsx, automotive_sales_cx.xlsx
 """
 import pandas as pd
 from pathlib import Path
 from openpyxl import Workbook
-from openpyxl.chart import BarChart, Reference
+from openpyxl.chart import BarChart, LineChart, Reference
+from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.utils import get_column_letter
 
@@ -14,74 +14,121 @@ PROC = ROOT / "data" / "processed"
 OUT = ROOT / "excel"
 OUT.mkdir(exist_ok=True)
 
-sup = pd.read_csv(PROC / "rpt_otif_by_supplier.csv")
-rt = pd.read_csv(PROC / "rpt_route_bottlenecks.csv")
-ov = pd.read_csv(PROC / "rpt_otif_overview.csv").iloc[0]
+HDR = Font(bold=True, color="FFFFFF", size=12)
+HFILL = PatternFill("solid", fgColor="1F4E79")
+BIG = Font(bold=True, size=16, color="1F4E79")
+
+def style_header(ws, ncols, row=1):
+    for c in range(1, ncols + 1):
+        cell = ws.cell(row=row, column=c)
+        cell.font = HDR; cell.fill = HFILL
+        cell.alignment = Alignment(horizontal="center")
+
+def add_table(ws, name, ncols, nrows):
+    t = Table(displayName=name, ref=f"A1:{get_column_letter(ncols)}{nrows + 1}")
+    t.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showRowStripes=True)
+    ws.add_table(t)
+
+# ---------- Project A workbook ----------
+fin_y = pd.read_csv(PROC / "rpt_fin_yearly.csv")
+fin_p = pd.read_csv(PROC / "rpt_fin_by_plant.csv")
+log_y = pd.read_csv(PROC / "rpt_logistics_yearly.csv")
+lt_m = pd.read_csv(PROC / "rpt_leadtime_by_material.csv")
+fc = pd.read_csv(PROC / "rpt_forecast_2027.csv")
 
 wb = Workbook()
+ws = wb.active; ws.title = "README"
+ws["A1"] = "Project A — Financials & Logistics (staging workbook)"; ws["A1"].font = BIG
+ws["A3"] = "Synthetic data, 2022-2026 (5-year window). Sheets: Fin_Yearly, Fin_ByPlant, Logistics_Yearly, LeadTime_Material, Forecast_2027."
+ws["A4"] = "Formats: dates YYYY-MM, currency EUR millions, percentages with 1 decimal."
 
-# ---- Suppliers sheet (lookup source for XVERWEIS) ----
-ws = wb.active
-ws.title = "Suppliers"
-cols = ["supplier_id", "region", "country", "orders", "otif_pct", "sla_target_pct", "sla_status", "lt_variance_days", "spend_eur"]
+ws = wb.create_sheet("Fin_Yearly")
+cols = ["year","revenue_eur_m","cogs_eur_m","opex_eur_m","capex_eur_m","op_profit_eur_m","units","gross_margin_pct","op_margin_pct"]
 ws.append(cols)
-for _, r in sup.iterrows():
-    ws.append([r.supplier_id, r.region, r.country, int(r.orders), float(r.otif_pct),
-               float(r.sla_target_pct), r.sla_status, float(r.lt_variance_days), float(r.spend_eur)])
-t = Table(displayName="tblSuppliers", ref=f"A1:{get_column_letter(len(cols))}{len(sup)+1}")
-t.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showRowStripes=True)
-ws.add_table(t)
+for _, r in fin_y.iterrows(): ws.append([int(r.year)] + [float(r[c]) for c in cols[1:]])
+style_header(ws, len(cols)); add_table(ws, "tblFinYearly", len(cols), len(fin_y))
+for rr in range(2, len(fin_y) + 2):
+    for cc in range(2, 7): ws.cell(row=rr, column=cc).number_format = '#,##0.0'
+    for cc in (8, 9): ws.cell(row=rr, column=cc).number_format = '0.0"%"'
 
-# ---- Routes sheet ----
-ws2 = wb.create_sheet("Routes")
-rcols = ["origin_port", "dest_port", "plant", "shipments", "otif_pct", "avg_lt", "lt_variance", "delayed_pct"]
-ws2.append(rcols)
-for _, r in rt.iterrows():
-    ws2.append([r.origin_port, r.dest_port, r.plant, int(r.shipments), float(r.otif_pct),
-                float(r.avg_lt), float(r.lt_variance), float(r.delayed_pct)])
-t2 = Table(displayName="tblRoutes", ref=f"A1:{get_column_letter(len(rcols))}{len(rt)+1}")
-t2.tableStyleInfo = TableStyleInfo(name="TableStyleMedium4", showRowStripes=True)
-ws2.add_table(t2)
+ch = LineChart(); ch.title = "Revenue by year (EUR m)"; ch.style = 12
+data = Reference(ws, min_col=2, min_row=1, max_row=len(fin_y) + 1)
+cats = Reference(ws, min_col=1, min_row=2, max_row=len(fin_y) + 1)
+ch.add_data(data, titles_from_data=True); ch.set_categories(cats); ch.height = 8; ch.width = 16
+ws.add_chart(ch, "K2")
 
-# ---- Dashboard sheet: XVERWEIS live lookups + KPI cells + chart ----
-d = wb.create_sheet("Dashboard")
-d["A1"] = "Supply Chain KPI Dashboard (Excel — XVERWEIS + Pivot-style tables + chart)"
-d["A1"].font = d["A1"].font.copy(bold=True, size=14)
-d["A3"] = "Overall OTIF %";        d["B3"] = float(ov.otif_pct)
-d["A4"] = "Late %";                d["B4"] = float(ov.late_pct)
-d["A5"] = "Avg lead-time variance (d)"; d["B5"] = float(ov.avg_lt_variance_days)
-d["A6"] = "Total spend EUR";       d["B6"] = float(ov.total_spend_eur)
-d["A8"] = "Supplier ID:";          d["B8"] = "SUP-001"
-d["A9"] = "Region (XVERWEIS):";    d["B9"] = '=XVERWEIS(B8,Suppliers!A:A,Suppliers!B:B,"n/a")'
-d["A10"] = "OTIF % (XVERWEIS):";   d["B10"] = '=XVERWEIS(B8,Suppliers!A:A,Suppliers!E:E,"n/a")'
-d["A11"] = "SLA status (XVERWEIS):"; d["B11"] = '=XVERWEIS(B8,Suppliers!A:A,Suppliers!G:G,"n/a")'
-d["A12"] = "Spend EUR (XVERWEIS):";  d["B12"] = '=XVERWEIS(B8,Suppliers!A:A,Suppliers!I:I,"n/a")'
-d["A13"] = "Supplier name (XVERWEIS):"; d["B13"] = '=XVERWEIS(B8,Suppliers!A:A,Suppliers!A:A,"n/a")'
-for r in range(3, 14):
-    d[f"A{r}"].font = d[f"A{r}"].font.copy(bold=True)
+ws = wb.create_sheet("Fin_ByPlant")
+cols = ["plant","year","revenue_eur_m","capex_eur_m","op_margin_pct"]
+ws.append(cols)
+for _, r in fin_p.iterrows(): ws.append([r.plant, int(r.year), float(r.revenue_eur_m), float(r.capex_eur_m), float(r.op_margin_pct)])
+style_header(ws, len(cols)); add_table(ws, "tblFinPlant", len(cols), len(fin_p))
 
-# chart data block (top-10 bottleneck lanes) + dynamic bar chart
-d["A16"] = "Lane"; d["B16"] = "OTIF %"
-lanes = rt.sort_values("otif_pct").head(10)
-for i, (_, r) in enumerate(lanes.iterrows()):
-    d.cell(row=17 + i, column=1, value=f"{r.origin_port}→{r.dest_port}")
-    d.cell(row=17 + i, column=2, value=float(r.otif_pct))
-ch = BarChart(); ch.type = "bar"; ch.title = "10 bottleneck lanes by OTIF %"
-ch.y_axis.title = "OTIF %"; ch.x_axis.title = "Lane"
-data = Reference(d, min_col=2, min_row=16, max_row=16 + len(lanes))
-cats = Reference(d, min_col=1, min_row=17, max_row=16 + len(lanes))
-ch.add_data(data, titles_from_data=True); ch.set_categories(cats)
-ch.height = 10; ch.width = 20
-d.add_chart(ch, "D3")
+ws = wb.create_sheet("Logistics_Yearly")
+cols = ["year","orders","avg_lead_days","lt_variance","otif_pct","spend_eur"]
+ws.append(cols)
+for _, r in log_y.iterrows(): ws.append([int(r.year), int(r.orders), float(r.avg_lead_days), float(r.lt_variance), float(r.otif_pct), float(r.spend_eur)])
+style_header(ws, len(cols)); add_table(ws, "tblLogYearly", len(cols), len(log_y))
 
-# pivot-style summary block (manual pivot equivalent, labeled)
-d["A30"] = "Pivot-style summary: OTIF by region"
-d["A31"] = "Region"; d["B31"] = "Orders"; d["C31"] = "Avg OTIF %"
-reg = sup.groupby("region").agg(orders=("orders", "sum"), otif=("otif_pct", "mean")).reset_index()
-for i, (_, r) in enumerate(reg.iterrows()):
-    d.cell(row=32 + i, column=1, value=r.region)
-    d.cell(row=32 + i, column=2, value=int(r.orders))
-    d.cell(row=32 + i, column=3, value=round(float(r.otif), 1))
+ws = wb.create_sheet("LeadTime_Material")
+cols = ["material","orders","avg_lead_days","otif_pct","spend_eur"]
+ws.append(cols)
+for _, r in lt_m.iterrows(): ws.append([r.material, int(r.orders), float(r.avg_lead_days), float(r.otif_pct), float(r.spend_eur)])
+style_header(ws, len(cols)); add_table(ws, "tblLeadMat", len(cols), len(lt_m))
+ch = BarChart(); ch.type = "col"; ch.title = "Avg lead time by material (days)"
+data = Reference(ws, min_col=3, min_row=1, max_row=len(lt_m) + 1)
+cats = Reference(ws, min_col=1, min_row=2, max_row=len(lt_m) + 1)
+ch.add_data(data, titles_from_data=True); ch.set_categories(cats); ch.height = 8; ch.width = 16
+ws.add_chart(ch, "H2")
 
-wb.save(OUT / "supply_chain_workbook.xlsx")
-print("wrote", OUT / "supply_chain_workbook.xlsx")
+ws = wb.create_sheet("Forecast_2027")
+cols = ["plant","forecast_month","forecast_revenue_eur_m"]
+ws.append(cols)
+for _, r in fc.iterrows(): ws.append([r.plant, r.forecast_month, float(r.forecast_revenue_eur_m)])
+style_header(ws, len(cols)); add_table(ws, "tblForecast", len(cols), len(fc))
+
+wb.save(OUT / "automotive_financials.xlsx")
+
+# ---------- Project B workbook ----------
+sal_y = pd.read_csv(PROC / "rpt_sales_yearly.csv")
+rank = pd.read_csv(PROC / "rpt_region_rank.csv")
+tree = pd.read_csv(PROC / "rpt_treemap_region.csv")
+sent_r = pd.read_csv(PROC / "rpt_sentiment_by_region.csv")
+sent_o = pd.read_csv(PROC / "rpt_sentiment_overall.csv").iloc[0]
+
+wb = Workbook()
+ws = wb.active; ws.title = "README"
+ws["A1"] = "Project B — Regional Sales & Customer Sentiment (staging workbook)"; ws["A1"].font = BIG
+ws["A3"] = "Synthetic data, 2022-2026. Sheets: Sales_Yearly, Region_Rank, Treemap_Region, Sentiment_Region."
+ws["A5"] = "Overall sentiment:"; ws["B5"] = f"{sent_o.pct_positive}% positive, avg rating {sent_o.avg_rating} / 5 ({int(sent_o.reviews)} reviews)"
+
+ws = wb.create_sheet("Sales_Yearly")
+cols = ["year","units","revenue_eur_m","avg_asp_eur","yoy_growth_pct"]
+ws.append(cols)
+for _, r in sal_y.iterrows(): ws.append([int(r.year), int(r.units), float(r.revenue_eur_m), float(r.avg_asp_eur), None if pd.isna(r.yoy_growth_pct) else float(r.yoy_growth_pct)])
+style_header(ws, len(cols)); add_table(ws, "tblSalesYearly", len(cols), len(sal_y))
+ch = BarChart(); ch.type = "col"; ch.title = "Revenue by year (EUR m)"
+data = Reference(ws, min_col=3, min_row=1, max_row=len(sal_y) + 1)
+cats = Reference(ws, min_col=1, min_row=2, max_row=len(sal_y) + 1)
+ch.add_data(data, titles_from_data=True); ch.set_categories(cats); ch.height = 8; ch.width = 16
+ws.add_chart(ch, "H2")
+
+ws = wb.create_sheet("Region_Rank")
+cols = ["region","year","revenue_eur_m","revenue_rank"]
+ws.append(cols)
+for _, r in rank.iterrows(): ws.append([r.region, int(r.year), float(r.revenue_eur_m), int(r.revenue_rank)])
+style_header(ws, len(cols)); add_table(ws, "tblRegionRank", len(cols), len(rank))
+
+ws = wb.create_sheet("Treemap_Region")
+cols = ["region","revenue_eur_m","revenue_share_pct"]
+ws.append(cols)
+for _, r in tree.iterrows(): ws.append([r.region, float(r.revenue_eur_m), float(r.revenue_share_pct)])
+style_header(ws, len(cols)); add_table(ws, "tblTreemap", len(cols), len(tree))
+
+ws = wb.create_sheet("Sentiment_Region")
+cols = ["region","reviews","avg_rating","pct_positive","avg_sentiment_score"]
+ws.append(cols)
+for _, r in sent_r.iterrows(): ws.append([r.region, int(r.reviews), float(r.avg_rating), float(r.pct_positive), float(r.avg_sentiment_score)])
+style_header(ws, len(cols)); add_table(ws, "tblSentiment", len(cols), len(sent_r))
+
+wb.save(OUT / "automotive_sales_cx.xlsx")
+print("wrote", [p.name for p in OUT.glob("automotive_*.xlsx")])

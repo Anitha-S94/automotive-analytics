@@ -1,6 +1,7 @@
 check,violations
-duplicate_order_ids,0
-orphan_supplier_fks,0
-invalid_rows,0
-raw_order_rows,60000
-clean_order_rows,60000
+dup_financials,0
+dup_orders,0
+fin_rows_raw,290
+fin_rows_clean,290
+orders_rows_raw,30000
+orders_rows_clean,30000

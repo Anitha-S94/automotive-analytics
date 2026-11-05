@@ -1,6 +1,6 @@
 # Power BI build spec — Automotive Analytics (Projects A & B)
 
-Import CSVs from `automotive-analytics/data/processed/`. Star schema from
+Import CSVs from `data/processed/`. Star schema from
 `sql/01_cleaning_and_model.sql` (dim_date, dim_plant, dim_region, dim_material +
 fact_financials / fact_logistics / fact_sales). Power Query: `powerquery/ETL_automotive.m`.
 

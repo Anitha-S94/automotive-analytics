@@ -1,7 +1,0 @@
-check,violations
-dup_financials,0
-dup_orders,0
-fin_rows_raw,290
-fin_rows_clean,290
-orders_rows_raw,30000
-orders_rows_clean,30000
