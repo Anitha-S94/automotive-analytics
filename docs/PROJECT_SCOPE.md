@@ -1,8 +1,8 @@
-# Project Scope — PFISTERER Winterbach Data Analyst Portfolio
+# Project Scope — Data Analyst Portfolio
 
 ## 1. Purpose
 A workable, reproducible analytics portfolio for a data analyst application at
-PFISTERER Winterbach, built entirely on **synthetic data** (no real company or
+This portfolio targets a grid & cable-components manufacturer, built entirely on **synthetic data** (no real company or
 third-party data). Two usecases under one project heading set.
 
 ## 2. In scope
@@ -48,7 +48,7 @@ third-party data). Two usecases under one project heading set.
   deferred — out of scope until the user asks).
 
 ## 3. Out of scope
-- Real PFISTERER data, real ENTSO-E/Open Power System Data downloads, any PII.
+- Real company data, real ENTSO-E/Open Power System Data downloads, any PII.
 - Power BI Desktop installation/refresh on Linux; publishing to Power BI Service.
 - GitHub remote creation/push (deferred by user instruction).
 - Production pipelines, scheduling, alerting; this is a portfolio, not an ops system.
@@ -56,7 +56,7 @@ third-party data). Two usecases under one project heading set.
 ## 4. Environment / prerequisites
 - Hardware used: AMD Ryzen AI MAX+ 395 (16C/32T), 121 GB RAM, Radeon 8060S iGPU,
   Ubuntu 26.04, 588 GB free disk.
-- Python 3.12 venv created with `uv` at `/home/lucky/pfisterer-analytics/venv`
+- Python 3.12 venv created with `uv` at `~/energy-supplychain-analytics/venv`
   (deps: pandas, numpy, duckdb, pyarrow, matplotlib).
 - **Gotcha:** the shell exports a PYTHONPATH pointing at another env — run all
   project commands with `env -u PYTHONPATH venv/bin/python ...` (or
@@ -64,7 +64,7 @@ third-party data). Two usecases under one project heading set.
 
 ## 5. How to run (end to end, from scratch)
 ```bash
-cd /home/lucky/pfisterer-analytics
+cd ~/energy-supplychain-analytics
 
 # 0. venv (already created; recreate with: uv venv venv --python 3.12 &&
 #    uv pip install -p venv/bin/python pandas numpy duckdb pyarrow matplotlib)
@@ -106,6 +106,6 @@ ls data/processed | wc -l         # 28 files (14 tables x parquet+csv)
 
 ## 8. GitHub (deferred — run when approved)
 ```bash
-git remote add origin https://github.com/<user>/pfisterer-analytics.git
+git remote add origin https://github.com/<you>/energy-supplychain-analytics.git
 git push -u origin main
 ```

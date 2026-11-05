@@ -1,4 +1,4 @@
-"""Synthetic ERP supply-chain dataset for PFISTERER-style global logistics.
+"""Synthetic ERP supply-chain dataset for a global cable & connector manufacturer-style logistics.
 
 Tables:
   data/raw/lme_metal_prices.csv   daily copper/aluminum index (synthetic, USD/t)

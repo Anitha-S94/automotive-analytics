@@ -170,7 +170,7 @@ table(document.getElementById('t_stress'),
   ['cable_id','location','voltage_kv','high_load_hours','overload_hours','stress_index','maintenance_priority'],
   STRESS.map(r=>({{...r, maintenance_priority:'<b style="color:'+( {json.dumps(prio_color)}[r.maintenance_priority]||'#333')+'">'+r.maintenance_priority+'</b>'}})));
 """
-(OUT / "energy_dashboard.html").write_text(page("Offshore Grid Load & Maintenance — PFISTERER analytics", body, js))
+(OUT / "energy_dashboard.html").write_text(page("Offshore Grid Load & Maintenance — Energy & Supply Chain Analytics", body, js))
 
 # ---------------- SUPPLY CHAIN ----------------
 ov = pd.read_parquet(PROC / "rpt_otif_overview.parquet").iloc[0]
@@ -251,5 +251,5 @@ table(document.getElementById('t_reorder'),
   REORDER);
 table(document.getElementById('t_dq'), ['check','violations'], DQ);
 """
-(OUT / "supplychain_dashboard.html").write_text(page("Global Supply Chain & Raw Materials — PFISTERER analytics", body, js))
+(OUT / "supplychain_dashboard.html").write_text(page("Global Supply Chain & Raw Materials — Energy & Supply Chain Analytics", body, js))
 print("wrote", [p.name for p in OUT.glob("*_dashboard.html")])

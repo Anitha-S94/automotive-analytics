@@ -1,4 +1,4 @@
-# PFISTERER Winterbach — Data Analyst Portfolio Project
+# Data Analyst Portfolio Project — Energy Grid & Supply Chain Analytics
 
 Two usecase-based analytics projects built with **synthetic data** (no real company data):
 
@@ -11,7 +11,7 @@ AMD Ryzen AI MAX+ 395 (16C/32T @ 5.2 GHz), 121 GB RAM, Radeon 8060S iGPU (ROCm),
 
 ## Quick start
 ```bash
-cd /home/lucky/pfisterer-analytics
+cd ~/energy-supplychain-analytics
 source venv/bin/activate
 python scripts/gen_energy.py        # synthetic offshore grid data -> data/raw/
 python scripts/gen_supplychain.py   # synthetic ERP + LME prices  -> data/raw/
@@ -65,7 +65,7 @@ step-by-step run commands, Power BI steps, deferred GitHub publish).
 ## Publish to GitHub
 Repo is initialized locally. When you are ready:
 ```bash
-git remote add origin https://github.com/<you>/pfisterer-analytics.git
+git remote add origin https://github.com/<you>/energy-supplychain-analytics.git
 git push -u origin main
 ```
 (GitHub auth to be set up separately — deferred per instruction.)

@@ -1,7 +1,7 @@
 # Methodology
 
 All data is **synthetic**, generated deterministically (seeds 42 and 7) so the
-project is fully reproducible offline. No real PFISTERER or third-party data.
+project is fully reproducible offline. No real company or third-party data.
 
 ## Use case 1 — Offshore grid load
 - 8 export cables (320/525 kV) at 8 offshore substations, hourly, 2025-01-01 → 2026-10-31 (128,448 rows).
