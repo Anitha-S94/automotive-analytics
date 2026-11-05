@@ -181,9 +181,13 @@ sc = pd.read_parquet(PROC / "rpt_scenario.parquet")
 screg = pd.read_parquet(PROC / "rpt_scenario_by_region.parquet")
 pr = pd.read_parquet(PROC / "rpt_price_trend.parquet")
 risk = pd.read_parquet(PROC / "rpt_stockout_risk.parquet")
+reorder = pd.read_parquet(PROC / "rpt_reorder_points.parquet")
+dq = pd.read_parquet(PROC / "rpt_data_quality.parquet")
+alerts = json.loads((ROOT / "alerts.json").read_text()) if (ROOT / "alerts.json").exists() else {"alerts": [], "n_critical": 0, "n_warning": 0}
 
 body = """
 <h2>Executive overview</h2><div class="row" id="kpi2"></div>
+<div class="panel" id="c_alerts"></div>
 <div class="row"><div class="panel" style="flex:1" id="c_otif_reg"></div>
 <div class="panel" style="flex:1" id="c_price"></div></div>
 <h2>Supplier &amp; SLA performance</h2>
@@ -192,18 +196,29 @@ body = """
 <div class="panel" id="t_risk"></div>
 <h2>Logistics network &amp; bottlenecks</h2>
 <div class="panel" id="c_route"></div>
+<h2>Reorder points &amp; raw-material inventory (reorder cycles)</h2>
+<div class="panel" id="t_reorder"></div>
+<h2>Data quality gates (ETL)</h2>
+<div class="panel" id="t_dq"></div>
 <h2>Scenario: lead time +10% / +20%</h2>
 <div class="row"><div class="panel" style="flex:1" id="c_scen"></div>
 <div class="panel" style="flex:1" id="c_screg"></div></div>
 """
 js = f"""
 const SUP={df_json(sup)}, RT={df_json(rt)}, DR={df_json(dr)}, SC={df_json(sc)},
-SCREG={df_json(screg)}, PR={df_json(pr)}, RISK={df_json(risk)};
+SCREG={df_json(screg)}, PR={df_json(pr)}, RISK={df_json(risk)},
+REORDER={df_json(reorder)}, DQ={df_json(dq)}, ALERTS={json.dumps(alerts['alerts'])};
 cards(document.getElementById('kpi2'), [
   {{k:'OTIF', v:{ov.otif_pct}+'%'}}, {{k:'Late orders', v:{ov.late_pct}+'%'}},
   {{k:'Avg lead-time variance', v:'+'+{ov.avg_lt_variance_days}+' d'}},
   {{k:'Total spend', v:'€'+( {ov.total_spend_eur}/1e6).toFixed(1)+'M'}},
+  {{k:'Active alerts', v:ALERTS.length+' ('+{alerts['n_critical']}+' CRITICAL)'}},
 ]);
+document.getElementById('c_alerts').innerHTML = '<b>Automated refresh alerts (refresh_and_alert.py)</b><br>' +
+  (ALERTS.length ? '<ul style="font-size:12px;max-height:140px;overflow:auto">' +
+   ALERTS.slice(0,15).map(a=>'<li style="color:' + (a.severity==='CRITICAL'?'#c0392b':'#d9822b') + '">' +
+     '<b>'+a.severity+'</b> '+a.rule+' — '+(a.cable||a.supplier||a.material||'')+' '+a.detail+'</li>').join('') + '</ul>'
+   : 'no alerts');
 const regs = [...new Set(SUP.map(r=>r.region))];
 document.getElementById('c_otif_reg').innerHTML = bar(null,null,{{labels:regs,
   values:regs.map(g=>{{const x=SUP.filter(r=>r.region===g); return 100*x.reduce((a,r)=>a+r.otif_pct,0)/x.length;}}),
@@ -231,6 +246,10 @@ document.getElementById('c_screg').innerHTML = bar(null,null,{{labels:SCREG.map(
 table(document.getElementById('t_risk'),
   ['supplier_id','region','material','orders','short_shipments','severe_delays','stockout_risk'],
   [...RISK].sort((a,b)=>b.short_shipments-a.short_shipments).slice(0,15));
+table(document.getElementById('t_reorder'),
+  ['material','avg_daily_demand_t','avg_lead_days','p95_lead_days','safety_stock_t','reorder_point_t','annual_spend_m_eur','reorder_alert'],
+  REORDER);
+table(document.getElementById('t_dq'), ['check','violations'], DQ);
 """
 (OUT / "supplychain_dashboard.html").write_text(page("Global Supply Chain & Raw Materials — PFISTERER analytics", body, js))
 print("wrote", [p.name for p in OUT.glob("*_dashboard.html")])

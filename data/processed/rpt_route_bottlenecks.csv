@@ -2,8 +2,8 @@ origin_port,dest_port,plant,shipments,otif_pct,avg_lt,lt_variance,delayed_pct
 Sao Paulo,Hamburg,Hamburg,2736,88.2,27.9,-2.9,1.6
 Sao Paulo,Hamburg,Other EU,844,88.3,28.5,-2.8,1.7
 Mumbai,Hamburg,Other EU,904,88.3,27.5,-2.8,2.1
-Shanghai,Nuremberg,Hamburg,2608,88.7,28.3,-2.9,2.0
 Busan,Hamburg,Hamburg,2645,88.7,28.3,-2.9,2.0
+Shanghai,Nuremberg,Hamburg,2608,88.7,28.3,-2.9,2.0
 Sao Paulo,Hamburg,Nuremberg,2376,88.7,28.5,-3.1,1.8
 Verona,Nuremberg,Nuremberg,2416,88.9,28.1,-2.9,2.1
 Busan,Hamburg,Other EU,877,88.9,28.3,-3.1,1.6
@@ -13,8 +13,8 @@ Mersin,Hamburg,Hamburg,2738,89.1,28.3,-3.0,1.7
 Gdansk,Nuremberg,Hamburg,2786,89.1,28.3,-3.0,1.8
 Houston,Nuremberg,Other EU,886,89.2,27.8,-2.8,1.1
 Shenzhen,Hamburg,Other EU,963,89.3,28.3,-3.0,1.5
-Mersin,Hamburg,Nuremberg,2465,89.4,28.2,-2.9,2.0
 Gdansk,Nuremberg,Nuremberg,2416,89.4,27.9,-2.9,1.8
+Mersin,Hamburg,Nuremberg,2465,89.4,28.2,-2.9,2.0
 Shanghai,Nuremberg,Nuremberg,2415,89.4,28.3,-3.0,1.2
 Busan,Hamburg,Nuremberg,2474,89.5,28.4,-3.0,1.3
 Shanghai,Hamburg,Other EU,897,89.6,28.4,-3.0,1.7

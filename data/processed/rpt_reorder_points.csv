@@ -1,0 +1,7 @@
+material,avg_daily_demand_t,demand_sigma_t,avg_lead_days,p95_lead_days,safety_stock_t,reorder_point_t,annual_spend_m_eur,reorder_alert
+HV components,40685.5,11394.6,29.8,54.0,138158.7,2335177.4,8134070.1,VOLATILE LEAD TIME - raise safety stock
+Epoxy resin,40508.9,11355.7,29.8,55.0,138957.0,2366948.0,8129458.3,VOLATILE LEAD TIME - raise safety stock
+Silicone rubber,40614.3,11473.5,27.3,57.0,142928.1,2457943.2,8128361.6,VOLATILE LEAD TIME - raise safety stock
+Steel hardware,34771.1,10605.4,27.1,60.0,135546.3,2221811.3,7015202.6,VOLATILE LEAD TIME - raise safety stock
+Copper rod,34875.4,10556.8,28.3,54.0,128001.2,2011273.3,136980.7,VOLATILE LEAD TIME - raise safety stock
+Aluminum conductor,40236.2,11144.5,26.8,53.0,133869.2,2266387.8,50561.6,VOLATILE LEAD TIME - raise safety stock

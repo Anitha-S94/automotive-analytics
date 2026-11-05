@@ -17,16 +17,24 @@ python scripts/gen_energy.py        # synthetic offshore grid data -> data/raw/
 python scripts/gen_supplychain.py   # synthetic ERP + LME prices  -> data/raw/
 python scripts/build_reports.py     # DuckDB SQL reports          -> data/processed/
 python scripts/make_charts.py       # static dashboard PNGs       -> analysis/
+python scripts/make_html_dashboards.py  # interactive dashboards  -> powerbi/*.html
+python scripts/make_excel.py        # Excel workbook (XVERWEIS)   -> excel/
+python scripts/refresh_and_alert.py # automated refresh + alerts  -> alerts.json
 ```
 
 ## Layout
 ```
 data/raw/          synthetic source data (parquet + csv)
 data/processed/    report tables (parquet + csv) — the Power BI import source
-sql/               01 energy profiling, 02 maintenance stress, 03 supply chain, 04 scenario
-scripts/           generators, report builder, chart renderer
+sql/               01 energy profiling, 02 maintenance stress, 03 supply chain, 04 scenario,
+                   05 star/snowflake model + ETL data-quality gates, 06 query optimization
+                   (pre-aggregated tables), 07 reorder-point logic
+scripts/           generators, report builder, chart renderer, Excel workbook builder,
+                   refresh_and_alert.py (automated refresh + alerting)
 analysis/          rendered dashboard PNGs (mirror the Power BI pages)
-powerbi/           DAX measures + exact dashboard build spec for Power BI Desktop
+powerbi/           DAX measures, Power Query (M) ETL scripts, exact dashboard build spec,
+                   runnable interactive HTML dashboards
+excel/             supply_chain_workbook.xlsx (XVERWEIS lookups, tables, chart)
 docs/              methodology
 ```
 

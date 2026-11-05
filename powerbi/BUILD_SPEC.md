@@ -6,6 +6,11 @@ Star schema: `rpt_*` report tables are small and independent; the two fact table
 
 ## Project 1 — "Offshore Grid Load & Maintenance" (Energy_Grid.pbix)
 
+**Model:** star schema — `dim_date`, `dim_cable`, `dim_location` + `fact_load_hourly`
+(built by `sql/05_star_snowflake_model.sql`; Power Query equivalent in
+`powerbi/powerquery/ETL_energy.m`). Bind trend visuals to the pre-aggregated
+`agg_load_daily` (5,352 rows) instead of the 128k-row fact (`sql/06_query_optimization.sql`).
+
 **Page 1 — Executive overview**
 - Card: avg utilization % (measure below), Card: peak-to-average ratio (max),
   Card: total overload hours, Card: cables near capacity (>90%).
@@ -28,6 +33,12 @@ Star schema: `rpt_*` report tables are small and independent; the two fact table
 
 ## Project 2 — "Global Supply Chain & Raw Materials" (Supply_Chain.pbix)
 
+**Model:** snowflake schema — `dim_region → dim_country → dim_supplier`,
+`dim_route`, `dim_material` + `fact_orders` (`sql/05_star_snowflake_model.sql`;
+Power Query equivalent `powerbi/powerquery/ETL_supplychain.m` with duplicate-removal
+and join steps). ETL data-quality gates (duplicate order_ids, orphan FKs, invalid
+rows) are in `sql/05` and surface as `rpt_data_quality` / `dq_*` tables.
+
 **Page 1 — Executive overview**
 - Cards from rpt_otif_overview: OTIF %, late %, avg lead-time variance (days), total spend €.
 - Line: monthly copper & aluminum index (rpt_price_trend).
@@ -47,5 +58,22 @@ Star schema: `rpt_*` report tables are small and independent; the two fact table
 - Column chart: annual holding-cost impact € by scenario (rpt_scenario).
 - Bar: impact by region (rpt_scenario_by_region).
 - Card: extra pipeline inventory € per scenario.
+
+**Page 5 — Reorder cycles & data quality**
+- Table: reorder points per material — avg daily demand, lead time (avg/p95),
+  safety stock (z=1.65), reorder point, alert (rpt_reorder_points).
+- Table: data-quality gate results (rpt_data_quality).
+- Card: active alert count (from alerts.json produced by scripts/refresh_and_alert.py).
+
+### Refresh & alerting (Power BI Service equivalent)
+`scripts/refresh_and_alert.py` re-runs the full pipeline (the "scheduled refresh")
+and evaluates alert rules (connector overload, stockout risk, SLA breach, OTIF < 90%,
+DQ violations), writing `alerts.json` / `alerts.log` and exiting 1 on CRITICAL —
+wire the same rules to Power BI data-driven alerts / Power Automate in Service.
+
+### Excel deliverable
+`excel/supply_chain_workbook.xlsx` (built by `scripts/make_excel.py`): Excel tables
+(tblSuppliers, tblRoutes), live **XVERWEIS** lookups on the Dashboard sheet, KPI
+cells, pivot-style region summary, and a bar chart of the 10 bottleneck lanes.
 
 ### DAX — see `measures_supplychain.dax`

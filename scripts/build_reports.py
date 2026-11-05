@@ -1,5 +1,5 @@
-"""Run all SQL report queries against a DuckDB file and export every
-rpt_* table to data/processed/*.parquet (+ CSV for Power BI ingestion)."""
+"""Run all SQL files against a DuckDB file and export every rpt_* / dq_* / agg_*
+table to data/processed/*.parquet (+ CSV for Power BI ingestion)."""
 import duckdb
 from pathlib import Path
 
@@ -15,7 +15,9 @@ for f in sorted((ROOT / "sql").glob("*.sql")):
     con.execute(f.read_text())
 
 tables = [r[0] for r in con.execute(
-    "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'rpt_%' ORDER BY 1").fetchall()]
+    """SELECT table_name FROM information_schema.tables
+       WHERE table_name LIKE 'rpt_%' OR table_name LIKE 'dq_%' OR table_name LIKE 'agg_%'
+       ORDER BY 1""").fetchall()]
 for t in tables:
     pq = PROC / f"{t}.parquet"
     csv = PROC / f"{t}.csv"

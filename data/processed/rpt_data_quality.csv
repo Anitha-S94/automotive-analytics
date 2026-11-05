@@ -1,0 +1,6 @@
+check,violations
+duplicate_order_ids,0
+orphan_supplier_fks,0
+invalid_rows,0
+raw_order_rows,60000
+clean_order_rows,60000

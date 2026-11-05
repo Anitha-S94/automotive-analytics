@@ -26,6 +26,18 @@ third-party data). Two usecases under one project heading set.
 - Supply chain dashboard: Power BI spec + HTML dashboard + PNG panels.
 - Scenario analysis: inventory holding-cost impact of +10%/+20% lead times
   (`sql/04_scenario_analysis.sql`).
+- Reorder-cycle logic: safety stock (95% service level, z=1.65), reorder points per
+  material, dual-source alerts for long/volatile lead times (`sql/07_reorder_cycles.sql`).
+- Relational modeling: star schema (energy) and snowflake schema (supply chain) with
+  ETL data-quality gates — duplicate removal, orphan-FK and invalid-row checks
+  (`sql/05_star_snowflake_model.sql`); query optimization via pre-aggregated tables
+  replacing full-fact scans (`sql/06_query_optimization.sql`).
+- Power Query (M) ETL scripts for Power BI Desktop (`powerbi/powerquery/*.m`).
+- Excel workbook with XVERWEIS lookups, Excel tables, KPI cells and a bottleneck-lane
+  chart (`excel/supply_chain_workbook.xlsx`).
+- Automated refresh + alerting: `scripts/refresh_and_alert.py` re-runs the pipeline and
+  fires CRITICAL/WARNING alerts (connector overload, stockout risk, SLA breach,
+  OTIF < 90%, DQ violations) → `alerts.json`/`alerts.log`.
 
 ### Shared deliverables
 - Power BI deliverables: page-by-page build spec (`powerbi/BUILD_SPEC.md`),

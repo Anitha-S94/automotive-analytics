@@ -2,4 +2,6 @@ venv/
 __pycache__/
 *.pyc
 data/analytics.duckdb
+alerts.json
+alerts.log
 .DS_Store
