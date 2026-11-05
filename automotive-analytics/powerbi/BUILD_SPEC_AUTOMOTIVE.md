@@ -4,25 +4,27 @@ Import CSVs from `automotive-analytics/data/processed/`. Star schema from
 `sql/01_cleaning_and_model.sql` (dim_date, dim_plant, dim_region, dim_material +
 fact_financials / fact_logistics / fact_sales). Power Query: `powerquery/ETL_automotive.m`.
 
-## Project A — Financials & Logistics (Auto_Financials.pbix), 3 pages
-- **Page 1 Past:** line chart revenue by year; line gross vs op margin %; cards:
-  revenue, CAGR, op margin (measures in measures_automotive.dax).
-- **Page 2 Present:** bar CAPEX by plant (latest year); bar avg lead time by year;
-  bar OTIF% by year; table lead time by material; table downtime by plant.
-- **Page 3 Future:** line 2027 monthly forecast (sum of plants) vs GROUP TARGET (+8%);
-  gauge-style card: target vs forecast; DQ table.
-- Visuals per brief: bars, lines, multi-card, gauge (target tracking). Conditional
-  formatting on op margin and OTIF bars (threshold colors, not red/green-only —
-  use blue/orange/gray ramp).
-- Accessibility: theme with high-contrast palette, all visual titles ≥14pt,
-  callout cards ≥24pt, generous whitespace.
+## Project A — Financials & Logistics (Auto_Financials.pbix), 3 pages, each = multicard + gauge + bar
+- **Page 1 Financial Overview:** 3 KPI cards (revenue, op profit, units), gauge
+  "operating margin vs 15% target", bar "revenue by plant" — **bar is drillthrough** to page 3.
+- **Page 2 Logistics & Ops:** 3 KPI cards (OTIF, avg lead time, spend), gauge
+  "OTIF vs 95% SLA", bar "lead time by material" — **drillthrough** to page 3.
+- **Page 3 Drillthrough:** monthly revenue line for the clicked plant (page 1) or
+  lead-time-by-year for the clicked material (page 2) + detail table + back button.
+- Visuals per brief: bars, gauges (target tracking), multi-card. Conditional
+  formatting on bars via threshold color scale (navy/orange, not red/green-only).
+- Accessibility: high-contrast palette, visual titles ≥14pt, callout cards ≥24pt,
+  whitespace, tabbed navigation.
 
-## Project B — Sales & CX (Auto_SalesCX.pbix), 3 pages
-- **Page 1 Past:** line revenue by year; cards units/revenue/yoy.
-- **Page 2 Present:** treemap revenue by region (latest year); ribbon chart
-  revenue_rank by region over years (rank shifts); bar with conditional formatting.
-- **Page 3 Voice of customer:** sentiment KPI cards (% positive, avg rating,
-  review count); line % positive by year; table sentiment by region.
+## Project B — Sales & CX (Auto_SalesCX.pbix), 3 pages, each = multicard + gauge + bar
+- **Page 1 Sales Overview:** 3 KPI cards (revenue, units, regions), gauge
+  "YoY growth vs +5% target", bar "revenue by region" — **drillthrough** to page 3.
+- **Page 2 Customer Voice:** 3 sentiment KPI cards (% positive, avg rating, % negative),
+  gauge "positive sentiment vs 60% target", bar "% positive by region" — **drillthrough**.
+- **Page 3 Drillthrough:** monthly revenue line for the clicked region, or
+  % positive by year for the clicked sentiment region + table + back button.
+- Ribbon equivalent: rank table with ▲▼ arrows per region/year (rpt_region_rank);
+  treemap equivalent: proportional revenue bars by region (rpt_treemap_region).
 
 ## Phase 6 deployment
 - Publish both to dedicated workspaces (Auto-Finance, Auto-Sales-CX) with
