@@ -1,0 +1,102 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Project B — Regional Sales & Customer Sentiment (Automotive Analytics)</title><style>body{font-family:'Segoe UI',Arial,sans-serif;font-size:16px;line-height:1.5;margin:24px;color:#111;background:#fff;max-width:1000px}
+h1{font-size:28px} h2{font-size:22px;margin:28px 0 8px;color:#1F4E79;border-bottom:2px solid #1F4E79;padding-bottom:4px}
+.row{display:flex;gap:14px;flex-wrap:wrap} .panel{border:1px solid #999;border-radius:8px;padding:14px;margin-top:12px}
+.note{font-size:14px;color:#444} .callout{font-size:26px;font-weight:800;color:#1F4E79}</style></head><body><h1>Project B — Regional Sales & Customer Sentiment (Automotive Analytics)</h1><div class="note">Synthetic data · 5-year window 2022–2026 · accessible design: high contrast, ≥14pt body, ≥24pt callouts</div>
+<h2>Past — 5-year regional sales</h2><div class="row" id="kB"></div>
+<div class="panel" id="c_sal"></div>
+<h2>Present — where revenue sits now &amp; who leads</h2>
+<div class="panel" id="c_tree"></div>
+<div class="panel" id="t_rank"></div>
+<h2>Customer voice — sentiment KPIs</h2>
+<div class="panel" id="c_sent"></div>
+<div class="panel" id="t_sent"></div>
+<script>
+function bar(el, o) {
+  const W = 920, H = 340, m = {l: 60, r: 20, t: 40, b: 70};
+  const max = Math.max(...o.values) * 1.15;
+  const bw = (W - m.l - m.r) / o.values.length;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${o.title}">`;
+  s += `<text x="${m.l}" y="24" font-size="20" font-weight="700" fill="#111">${o.title}</text>`;
+  for (let g = 0; g <= 4; g++) {
+    const y = m.t + (H - m.t - m.b) * (1 - g / 4), v = max * g / 4;
+    s += `<line x1="${m.l}" y1="${y}" x2="${W - m.r}" y2="${y}" stroke="#bbb" stroke-width="1"/>
+          <text x="${m.l - 8}" y="${y + 5}" font-size="13" text-anchor="end" fill="#333">${v.toFixed(0)}</text>`;
+  }
+  o.values.forEach((v, i) => {
+    const h = (H - m.t - m.b) * v / max, x = m.l + i * bw + bw * 0.15, w = bw * 0.7;
+    s += `<rect x="${x}" y="${m.t + (H - m.t - m.b) - h}" width="${w}" height="${h}" fill="${o.colors ? o.colors[i] : '#1F4E79'}">
+            <title>${o.labels[i]}: ${v.toFixed(1)}${o.unit || ''}</title></rect>`;
+    s += `<text x="${x + w / 2}" y="${H - m.b + 20}" font-size="14" text-anchor="middle" fill="#111">${o.labels[i]}</text>`;
+    s += `<text x="${x + w / 2}" y="${m.t + (H - m.t - m.b) - h - 6}" font-size="14" font-weight="600" text-anchor="middle" fill="#111">${v.toFixed(1)}</text>`;
+  });
+  const out = s + "</svg>"; if (el) el.innerHTML = out; return out;
+}
+function line(el, series, o) {
+  const W = 920, H = 340, m = {l: 60, r: 20, t: 40, b: 50};
+  const allV = series.flatMap(s => s.values);
+  const max = Math.max(...allV) * 1.1, min = Math.min(...allV) * 0.9;
+  const X = i => m.l + (W - m.l - m.r) * i / (series[0].x.length - 1);
+  const Y = v => m.t + (H - m.t - m.b) * (1 - (v - min) / (max - min));
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${o.title}">`;
+  s += `<text x="${m.l}" y="24" font-size="20" font-weight="700" fill="#111">${o.title}</text>`;
+  for (let g = 0; g <= 4; g++) {
+    const y = m.t + (H - m.t - m.b) * (1 - g / 4), v = min + (max - min) * g / 4;
+    s += `<line x1="${m.l}" y1="${y}" x2="${W - m.r}" y2="${y}" stroke="#bbb"/>
+          <text x="${m.l - 8}" y="${y + 5}" font-size="13" text-anchor="end" fill="#333">${v.toFixed(0)}</text>`;
+  }
+  const pal = ['#1F4E79', '#C55A11', '#2E75B6', '#7F7F7F', '#BF8F00', '#548235'];
+  series.forEach((sr, k) => {
+    const pts = sr.x.map((_, i) => `${X(i)},${Y(sr.values[i])}`).join(' ');
+    s += `<polyline points="${pts}" fill="none" stroke="${pal[k % 6]}" stroke-width="3"><title>${sr.name}</title></polyline>`;
+    s += `<circle cx="${X(sr.x.length - 1)}" cy="${Y(sr.values[sr.values.length - 1])}" r="5" fill="${pal[k % 6]}"/>`;
+    s += `<text x="${W - m.r}" y="${40 + k * 22}" font-size="14" text-anchor="end" fill="${pal[k % 6]}" font-weight="600">${sr.name}</text>`;
+  });
+  series[0].x.forEach((t, i) => { if (i % Math.ceil(series[0].x.length / 8) === 0)
+    s += `<text x="${X(i)}" y="${H - m.b + 22}" font-size="13" text-anchor="middle" fill="#111">${t}</text>`; });
+  const out = s + "</svg>"; if (el) el.innerHTML = out; return out;
+}
+function ribbon(el, data, years) {
+  // simple rank-shift table with arrows (accessible alternative to ribbon chart)
+  const regions = [...new Set(data.map(d => d.region))];
+  let s = `<table style="border-collapse:collapse;font-size:15px;width:100%" role="table" aria-label="Revenue rank by region and year">`;
+  s += '<tr><th style="text-align:left;padding:8px;border-bottom:3px solid #111">Region</th>' +
+       years.map(y => `<th style="padding:8px;border-bottom:3px solid #111;text-align:right">${y}</th>`).join('') + '</tr>';
+  regions.forEach(r => {
+    s += `<tr><td style="padding:8px;border-bottom:1px solid #ddd;font-weight:600">${r}</td>`;
+    years.forEach(y => {
+      const d = data.find(d => d.region === r && d.year === y);
+      const prev = data.find(d => d.region === r && d.year === y - 1);
+      let arrow = '';
+      if (prev) { const diff = prev.revenue_rank - d.revenue_rank; arrow = diff > 0 ? ' ▲' : diff < 0 ? ' ▼' : ' ='; }
+      s += `<td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">#${d.revenue_rank} (${d.revenue_eur_m.toFixed(0)} M€)${arrow}</td>`;
+    });
+    s += '</tr>';
+  });
+  s += '</table>';
+  const out = s; if (el) el.innerHTML = out; return out;
+}
+function cards(el, items) {
+  const out = items.map(i => `<div style="flex:1;min-width:200px;background:#F2F6FB;border:3px solid #1F4E79;border-radius:10px;padding:16px">
+    <div style="font-size:15px;color:#333">${i.k}</div><div style="font-size:30px;font-weight:800;color:#1F4E79">${i.v}</div></div>`).join('');
+  if (el) el.innerHTML = out; return out;
+}
+function table(el, cols, rows) {
+  let s = `<table style="border-collapse:collapse;font-size:15px;width:100%"><thead><tr>` +
+    cols.map(c => `<th style="border-bottom:3px solid #111;padding:8px;text-align:left">${c}</th>`).join('') + `</tr></thead><tbody>` +
+    rows.map(r => '<tr>' + cols.map(c => `<td style="border-bottom:1px solid #ddd;padding:8px">${r[c] ?? ''}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
+  if (el) el.innerHTML = s; return s;
+}
+</script><script>
+const SY=[{"year": 2022, "units": 7395214, "revenue_eur_m": 273447.19999999995, "avg_asp_eur": 36912.0, "yoy_growth_pct": NaN}, {"year": 2023, "units": 7648455, "revenue_eur_m": 291210.10000000003, "avg_asp_eur": 37830.0, "yoy_growth_pct": 6.5}, {"year": 2024, "units": 8072995, "revenue_eur_m": 317275.30000000016, "avg_asp_eur": 39285.0, "yoy_growth_pct": 9.0}, {"year": 2025, "units": 8512439, "revenue_eur_m": 340395.20000000007, "avg_asp_eur": 39775.0, "yoy_growth_pct": 7.3}, {"year": 2026, "units": 7567047, "revenue_eur_m": 297075.39999999997, "avg_asp_eur": 39559.0, "yoy_growth_pct": -12.7}], RK=[{"region": "EU-West", "year": 2024, "revenue_eur_m": 74432.99999999999, "revenue_rank": 1}, {"region": "NAFTA", "year": 2024, "revenue_eur_m": 71714.9, "revenue_rank": 2}, {"region": "APAC", "year": 2024, "revenue_eur_m": 61521.799999999996, "revenue_rank": 3}, {"region": "DACH", "year": 2024, "revenue_eur_m": 49307.100000000006, "revenue_rank": 4}, {"region": "EU-East", "year": 2024, "revenue_eur_m": 36801.1, "revenue_rank": 5}, {"region": "Rest of World", "year": 2024, "revenue_eur_m": 23497.4, "revenue_rank": 6}, {"region": "NAFTA", "year": 2022, "revenue_eur_m": 64872.700000000004, "revenue_rank": 1}, {"region": "EU-West", "year": 2022, "revenue_eur_m": 63490.7, "revenue_rank": 2}, {"region": "APAC", "year": 2022, "revenue_eur_m": 50035.2, "revenue_rank": 3}, {"region": "DACH", "year": 2022, "revenue_eur_m": 42844.2, "revenue_rank": 4}, {"region": "EU-East", "year": 2022, "revenue_eur_m": 32523.100000000002, "revenue_rank": 5}, {"region": "Rest of World", "year": 2022, "revenue_eur_m": 19681.3, "revenue_rank": 6}, {"region": "NAFTA", "year": 2026, "revenue_eur_m": 65084.6, "revenue_rank": 1}, {"region": "EU-West", "year": 2026, "revenue_eur_m": 63204.99999999999, "revenue_rank": 2}, {"region": "APAC", "year": 2026, "revenue_eur_m": 59015.3, "revenue_rank": 3}, {"region": "DACH", "year": 2026, "revenue_eur_m": 49919.2, "revenue_rank": 4}, {"region": "EU-East", "year": 2026, "revenue_eur_m": 36888.4, "revenue_rank": 5}, {"region": "Rest of World", "year": 2026, "revenue_eur_m": 22962.900000000005, "revenue_rank": 6}, {"region": "NAFTA", "year": 2023, "revenue_eur_m": 72678.6, "revenue_rank": 1}, {"region": "EU-West", "year": 2023, "revenue_eur_m": 62636.99999999999, "revenue_rank": 2}, {"region": "APAC", "year": 2023, "revenue_eur_m": 54571.399999999994, "revenue_rank": 3}, {"region": "DACH", "year": 2023, "revenue_eur_m": 47206.4, "revenue_rank": 4}, {"region": "EU-East", "year": 2023, "revenue_eur_m": 32543.000000000004, "revenue_rank": 5}, {"region": "Rest of World", "year": 2023, "revenue_eur_m": 21573.700000000004, "revenue_rank": 6}, {"region": "EU-West", "year": 2025, "revenue_eur_m": 81838.6, "revenue_rank": 1}, {"region": "NAFTA", "year": 2025, "revenue_eur_m": 78981.90000000001, "revenue_rank": 2}, {"region": "APAC", "year": 2025, "revenue_eur_m": 61126.6, "revenue_rank": 3}, {"region": "DACH", "year": 2025, "revenue_eur_m": 55502.7, "revenue_rank": 4}, {"region": "EU-East", "year": 2025, "revenue_eur_m": 37910.90000000001, "revenue_rank": 5}, {"region": "Rest of World", "year": 2025, "revenue_eur_m": 25034.5, "revenue_rank": 6}], TR=[{"region": "NAFTA", "revenue_eur_m": 65084.6, "revenue_share_pct": 21.9}, {"region": "EU-West", "revenue_eur_m": 63204.99999999999, "revenue_share_pct": 21.3}, {"region": "APAC", "revenue_eur_m": 59015.3, "revenue_share_pct": 19.9}, {"region": "DACH", "revenue_eur_m": 49919.2, "revenue_share_pct": 16.8}, {"region": "EU-East", "revenue_eur_m": 36888.4, "revenue_share_pct": 12.4}, {"region": "Rest of World", "revenue_eur_m": 22962.900000000005, "revenue_share_pct": 7.7}], SR=[{"region": "APAC", "reviews": 836, "avg_rating": 3.06, "pct_positive": 47.8, "avg_sentiment_score": 0.04}, {"region": "NAFTA", "reviews": 871, "avg_rating": 3.01, "pct_positive": 47.2, "avg_sentiment_score": -0.01}, {"region": "EU-East", "reviews": 777, "avg_rating": 3.09, "pct_positive": 46.7, "avg_sentiment_score": -0.02}, {"region": "EU-West", "reviews": 847, "avg_rating": 2.96, "pct_positive": 45.9, "avg_sentiment_score": -0.15}, {"region": "DACH", "reviews": 845, "avg_rating": 2.97, "pct_positive": 45.3, "avg_sentiment_score": -0.17}, {"region": "Rest of World", "reviews": 824, "avg_rating": 3.0, "pct_positive": 44.9, "avg_sentiment_score": -0.2}], SY2=[{"year": 2022, "reviews": 1034, "pct_positive": 45.1, "avg_rating": 3.02}, {"year": 2023, "reviews": 1073, "pct_positive": 44.6, "avg_rating": 2.96}, {"year": 2024, "reviews": 1017, "pct_positive": 44.9, "avg_rating": 2.95}, {"year": 2025, "reviews": 1014, "pct_positive": 48.2, "avg_rating": 3.06}, {"year": 2026, "reviews": 862, "pct_positive": 49.3, "avg_rating": 3.08}];
+cards(document.getElementById('kB'), [
+  {k:'Revenue 2026 (EUR m)', v:'297075'},
+  {k:'Units 2026', v:'7,567,047'},
+  {k:'Sentiment positive', v:'46.3%'},
+  {k:'Avg rating', v:'3.01 / 5'}]);
+document.getElementById('c_sal').innerHTML = line(null, [{name:'Revenue EUR m', x:SY.map(r=>r.year), values:SY.map(r=>r.revenue_eur_m)}], {title:'Revenue by year — EUR m'});
+document.getElementById('c_tree').innerHTML = bar(null, {labels:TR.map(r=>r.region),
+  values:TR.map(r=>r.revenue_eur_m), title:'Revenue by region, latest year — EUR m (treemap data)'});
+ribbon(document.getElementById('t_rank'), RK, [...new Set(RK.map(r=>r.year))].sort());
+document.getElementById('c_sent').innerHTML = line(null, [{name:'% positive', x:SY2.map(r=>r.year), values:SY2.map(r=>r.pct_positive)}], {title:'Positive sentiment share by year — %'});
+table(document.getElementById('t_sent'), ['region','reviews','avg_rating','pct_positive','avg_sentiment_score'], SR);
+</script></body></html>

@@ -1,0 +1,61 @@
+plant,forecast_month,forecast_revenue_eur_m
+Chattanooga,2026-01,1996.0
+Chattanooga,2026-02,2001.4
+Chattanooga,2026-03,2006.7
+Chattanooga,2026-04,2012.0
+Chattanooga,2026-05,2017.4
+Chattanooga,2026-06,2022.7
+Chattanooga,2026-07,2028.0
+Chattanooga,2026-08,2033.3
+Chattanooga,2026-09,2038.7
+Chattanooga,2026-10,2044.0
+GROUP TARGET,2026-01,1149.8
+GROUP TARGET,2026-02,1192.3
+GROUP TARGET,2026-03,1242.9
+GROUP TARGET,2026-04,1307.9
+GROUP TARGET,2026-05,1334.5
+GROUP TARGET,2026-06,1374.6
+GROUP TARGET,2026-07,1339.2
+GROUP TARGET,2026-08,1318.4
+GROUP TARGET,2026-09,1252.9
+GROUP TARGET,2026-10,1197.7
+Leipzig,2026-01,2534.0
+Leipzig,2026-02,2542.5
+Leipzig,2026-03,2550.9
+Leipzig,2026-04,2559.3
+Leipzig,2026-05,2567.8
+Leipzig,2026-06,2576.2
+Leipzig,2026-07,2584.7
+Leipzig,2026-08,2593.1
+Leipzig,2026-09,2601.6
+Leipzig,2026-10,2610.0
+Sao Jose dos Campos,2026-01,1554.8
+Sao Jose dos Campos,2026-02,1557.2
+Sao Jose dos Campos,2026-03,1559.7
+Sao Jose dos Campos,2026-04,1562.1
+Sao Jose dos Campos,2026-05,1564.6
+Sao Jose dos Campos,2026-06,1567.0
+Sao Jose dos Campos,2026-07,1569.4
+Sao Jose dos Campos,2026-08,1571.9
+Sao Jose dos Campos,2026-09,1574.3
+Sao Jose dos Campos,2026-10,1576.8
+Stuttgart,2026-01,4769.1
+Stuttgart,2026-02,4778.6
+Stuttgart,2026-03,4788.1
+Stuttgart,2026-04,4797.6
+Stuttgart,2026-05,4807.2
+Stuttgart,2026-06,4816.7
+Stuttgart,2026-07,4826.2
+Stuttgart,2026-08,4835.7
+Stuttgart,2026-09,4845.2
+Stuttgart,2026-10,4854.7
+Zwickau,2026-01,3347.1
+Zwickau,2026-02,3359.5
+Zwickau,2026-03,3372.0
+Zwickau,2026-04,3384.4
+Zwickau,2026-05,3396.9
+Zwickau,2026-06,3409.3
+Zwickau,2026-07,3421.8
+Zwickau,2026-08,3434.2
+Zwickau,2026-09,3446.7
+Zwickau,2026-10,3459.1

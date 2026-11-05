@@ -1,0 +1,14 @@
+// DAX measures — Automotive projects (readable, business-named)
+Total Revenue EURm = SUM ( fact_financials[revenue_eur_m] )
+Total Capex EURm = SUM ( fact_financials[capex_eur_m] )
+Operating Profit EURm = SUM ( fact_financials[op_profit_eur_m] )
+Op Margin % = DIVIDE ( [Operating Profit EURm], [Total Revenue EURm] )
+Gross Margin % = DIVIDE ( SUM(fact_financials[revenue_eur_m]) - SUM(fact_financials[cogs_eur_m]), [Total Revenue EURm] )
+YoY Growth % = DIVIDE ( [Total Revenue EURm], CALCULATE([Total Revenue EURm], SAMEPERIODLASTYEAR(dim_date)) - 1 )
+5Y CAGR % = POWER ( DIVIDE([Total Revenue EURm], CALCULATE([Total Revenue EURm], DATEADD(dim_date[Date], -4, YEAR))) , 1/4 ) - 1
+OTIF % = AVERAGE ( fact_logistics[otif] )
+Avg Lead Time Days = AVERAGE ( fact_logistics[actual_lead_days] )
+Lead Time Variance Days = AVERAGE ( fact_logistics[actual_lead_days] ) - AVERAGE ( fact_logistics[promised_lead_days] )
+2027 Target EURm = [Total Revenue EURm] * 1.08
+Sentiment Positive % = DIVIDE ( COUNTROWS ( FILTER ( fact_reviews, fact_reviews[sentiment] = "Positive" ) ), COUNTROWS ( fact_reviews ) )
+Avg Rating = AVERAGE ( fact_reviews[rating] )

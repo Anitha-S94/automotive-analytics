@@ -36,10 +36,12 @@ powerbi/           DAX measures, Power Query (M) ETL scripts, exact dashboard bu
                    runnable interactive HTML dashboards
 excel/             supply_chain_workbook.xlsx (XVERWEIS lookups, tables, chart)
 docs/              methodology
+automotive-analytics/  second portfolio project: End-to-End Automotive Analytics
+                   Platforms (Project A financials+logistics 5y/forecast, Project B
+                   regional sales + sentiment) — see automotive-analytics/docs/
 ```
 
 ## Power BI note (important)
-Power BI Desktop runs on **Windows only** — it cannot run on this Linux machine.
 Everything the Desktop needs is ready here: the processed CSVs in `data/processed/`,
 the DAX measures in `powerbi/*.dax`, and the page-by-page build spec in
 `powerbi/BUILD_SPEC.md`. Open Desktop → Get Data → Text/CSV → follow the spec →

@@ -1,0 +1,121 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Project A — Financials & Logistics (Automotive Analytics)</title><style>body{font-family:'Segoe UI',Arial,sans-serif;font-size:16px;line-height:1.5;margin:24px;color:#111;background:#fff;max-width:1000px}
+h1{font-size:28px} h2{font-size:22px;margin:28px 0 8px;color:#1F4E79;border-bottom:2px solid #1F4E79;padding-bottom:4px}
+.row{display:flex;gap:14px;flex-wrap:wrap} .panel{border:1px solid #999;border-radius:8px;padding:14px;margin-top:12px}
+.note{font-size:14px;color:#444} .callout{font-size:26px;font-weight:800;color:#1F4E79}</style></head><body><h1>Project A — Financials & Logistics (Automotive Analytics)</h1><div class="note">Synthetic data · 5-year window 2022–2026 · accessible design: high contrast, ≥14pt body, ≥24pt callouts</div>
+<h2>Past — 5-year financial performance</h2><div class="row" id="kA"></div>
+<div class="panel" id="c_rev"></div>
+<div class="panel" id="c_margin"></div>
+<div class="row"><div class="panel" style="flex:1" id="c_capex"></div><div class="panel" style="flex:1" id="c_lt"></div></div>
+<h2>Present — logistics & operations</h2>
+<div class="panel" id="c_otif"></div>
+<div class="panel" id="t_lt"></div>
+<div class="panel" id="t_down"></div>
+<h2>Future — 2027 forecast vs +8% target</h2>
+<div class="panel" id="c_fc"></div>
+<div class="panel" id="t_dq"></div>
+<script>
+function bar(el, o) {
+  const W = 920, H = 340, m = {l: 60, r: 20, t: 40, b: 70};
+  const max = Math.max(...o.values) * 1.15;
+  const bw = (W - m.l - m.r) / o.values.length;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${o.title}">`;
+  s += `<text x="${m.l}" y="24" font-size="20" font-weight="700" fill="#111">${o.title}</text>`;
+  for (let g = 0; g <= 4; g++) {
+    const y = m.t + (H - m.t - m.b) * (1 - g / 4), v = max * g / 4;
+    s += `<line x1="${m.l}" y1="${y}" x2="${W - m.r}" y2="${y}" stroke="#bbb" stroke-width="1"/>
+          <text x="${m.l - 8}" y="${y + 5}" font-size="13" text-anchor="end" fill="#333">${v.toFixed(0)}</text>`;
+  }
+  o.values.forEach((v, i) => {
+    const h = (H - m.t - m.b) * v / max, x = m.l + i * bw + bw * 0.15, w = bw * 0.7;
+    s += `<rect x="${x}" y="${m.t + (H - m.t - m.b) - h}" width="${w}" height="${h}" fill="${o.colors ? o.colors[i] : '#1F4E79'}">
+            <title>${o.labels[i]}: ${v.toFixed(1)}${o.unit || ''}</title></rect>`;
+    s += `<text x="${x + w / 2}" y="${H - m.b + 20}" font-size="14" text-anchor="middle" fill="#111">${o.labels[i]}</text>`;
+    s += `<text x="${x + w / 2}" y="${m.t + (H - m.t - m.b) - h - 6}" font-size="14" font-weight="600" text-anchor="middle" fill="#111">${v.toFixed(1)}</text>`;
+  });
+  const out = s + "</svg>"; if (el) el.innerHTML = out; return out;
+}
+function line(el, series, o) {
+  const W = 920, H = 340, m = {l: 60, r: 20, t: 40, b: 50};
+  const allV = series.flatMap(s => s.values);
+  const max = Math.max(...allV) * 1.1, min = Math.min(...allV) * 0.9;
+  const X = i => m.l + (W - m.l - m.r) * i / (series[0].x.length - 1);
+  const Y = v => m.t + (H - m.t - m.b) * (1 - (v - min) / (max - min));
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${o.title}">`;
+  s += `<text x="${m.l}" y="24" font-size="20" font-weight="700" fill="#111">${o.title}</text>`;
+  for (let g = 0; g <= 4; g++) {
+    const y = m.t + (H - m.t - m.b) * (1 - g / 4), v = min + (max - min) * g / 4;
+    s += `<line x1="${m.l}" y1="${y}" x2="${W - m.r}" y2="${y}" stroke="#bbb"/>
+          <text x="${m.l - 8}" y="${y + 5}" font-size="13" text-anchor="end" fill="#333">${v.toFixed(0)}</text>`;
+  }
+  const pal = ['#1F4E79', '#C55A11', '#2E75B6', '#7F7F7F', '#BF8F00', '#548235'];
+  series.forEach((sr, k) => {
+    const pts = sr.x.map((_, i) => `${X(i)},${Y(sr.values[i])}`).join(' ');
+    s += `<polyline points="${pts}" fill="none" stroke="${pal[k % 6]}" stroke-width="3"><title>${sr.name}</title></polyline>`;
+    s += `<circle cx="${X(sr.x.length - 1)}" cy="${Y(sr.values[sr.values.length - 1])}" r="5" fill="${pal[k % 6]}"/>`;
+    s += `<text x="${W - m.r}" y="${40 + k * 22}" font-size="14" text-anchor="end" fill="${pal[k % 6]}" font-weight="600">${sr.name}</text>`;
+  });
+  series[0].x.forEach((t, i) => { if (i % Math.ceil(series[0].x.length / 8) === 0)
+    s += `<text x="${X(i)}" y="${H - m.b + 22}" font-size="13" text-anchor="middle" fill="#111">${t}</text>`; });
+  const out = s + "</svg>"; if (el) el.innerHTML = out; return out;
+}
+function ribbon(el, data, years) {
+  // simple rank-shift table with arrows (accessible alternative to ribbon chart)
+  const regions = [...new Set(data.map(d => d.region))];
+  let s = `<table style="border-collapse:collapse;font-size:15px;width:100%" role="table" aria-label="Revenue rank by region and year">`;
+  s += '<tr><th style="text-align:left;padding:8px;border-bottom:3px solid #111">Region</th>' +
+       years.map(y => `<th style="padding:8px;border-bottom:3px solid #111;text-align:right">${y}</th>`).join('') + '</tr>';
+  regions.forEach(r => {
+    s += `<tr><td style="padding:8px;border-bottom:1px solid #ddd;font-weight:600">${r}</td>`;
+    years.forEach(y => {
+      const d = data.find(d => d.region === r && d.year === y);
+      const prev = data.find(d => d.region === r && d.year === y - 1);
+      let arrow = '';
+      if (prev) { const diff = prev.revenue_rank - d.revenue_rank; arrow = diff > 0 ? ' ▲' : diff < 0 ? ' ▼' : ' ='; }
+      s += `<td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">#${d.revenue_rank} (${d.revenue_eur_m.toFixed(0)} M€)${arrow}</td>`;
+    });
+    s += '</tr>';
+  });
+  s += '</table>';
+  const out = s; if (el) el.innerHTML = out; return out;
+}
+function cards(el, items) {
+  const out = items.map(i => `<div style="flex:1;min-width:200px;background:#F2F6FB;border:3px solid #1F4E79;border-radius:10px;padding:16px">
+    <div style="font-size:15px;color:#333">${i.k}</div><div style="font-size:30px;font-weight:800;color:#1F4E79">${i.v}</div></div>`).join('');
+  if (el) el.innerHTML = out; return out;
+}
+function table(el, cols, rows) {
+  let s = `<table style="border-collapse:collapse;font-size:15px;width:100%"><thead><tr>` +
+    cols.map(c => `<th style="border-bottom:3px solid #111;padding:8px;text-align:left">${c}</th>`).join('') + `</tr></thead><tbody>` +
+    rows.map(r => '<tr>' + cols.map(c => `<td style="border-bottom:1px solid #ddd;padding:8px">${r[c] ?? ''}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
+  if (el) el.innerHTML = s; return s;
+}
+</script><script>
+const FY=[{"year": 2022, "revenue_eur_m": 145921.30000000002, "cogs_eur_m": 89599.50000000003, "opex_eur_m": 20175.3, "capex_eur_m": 10066.499999999998, "op_profit_eur_m": 26079.999999999996, "units": 6071626, "gross_margin_pct": 38.6, "op_margin_pct": 17.9}, {"year": 2023, "revenue_eur_m": 150528.00000000006, "cogs_eur_m": 92908.70000000001, "opex_eur_m": 21132.7, "capex_eur_m": 10578.199999999999, "op_profit_eur_m": 25908.399999999998, "units": 6277048, "gross_margin_pct": 38.3, "op_margin_pct": 17.2}, {"year": 2024, "revenue_eur_m": 155683.6, "cogs_eur_m": 96172.40000000005, "opex_eur_m": 21638.299999999992, "capex_eur_m": 11067.900000000003, "op_profit_eur_m": 26804.999999999996, "units": 6606643, "gross_margin_pct": 38.2, "op_margin_pct": 17.2}, {"year": 2025, "revenue_eur_m": 160546.0000000001, "cogs_eur_m": 99067.90000000002, "opex_eur_m": 22584.00000000001, "capex_eur_m": 10509.2, "op_profit_eur_m": 28384.9, "units": 6832812, "gross_margin_pct": 38.3, "op_margin_pct": 17.7}, {"year": 2026, "revenue_eur_m": 141224.30000000002, "cogs_eur_m": 87073.40000000001, "opex_eur_m": 20124.400000000005, "capex_eur_m": 10603.099999999999, "op_profit_eur_m": 23423.4, "units": 5940799, "gross_margin_pct": 38.3, "op_margin_pct": 16.6}], GR=[{"year": 2022, "revenue_eur_m": 145921.30000000002, "yoy_growth_pct": NaN}, {"year": 2023, "revenue_eur_m": 150528.00000000006, "yoy_growth_pct": 3.2}, {"year": 2024, "revenue_eur_m": 155683.6, "yoy_growth_pct": 3.4}, {"year": 2025, "revenue_eur_m": 160546.0000000001, "yoy_growth_pct": 3.1}, {"year": 2026, "revenue_eur_m": 141224.30000000002, "yoy_growth_pct": -12.0}], FP=[{"plant": "Chattanooga", "year": 2022, "revenue_eur_m": 20561.499999999996, "capex_eur_m": 1320.1, "op_margin_pct": 17.7}, {"plant": "Chattanooga", "year": 2023, "revenue_eur_m": 21155.5, "capex_eur_m": 1461.1, "op_margin_pct": 17.7}, {"plant": "Chattanooga", "year": 2024, "revenue_eur_m": 21822.3, "capex_eur_m": 1530.1, "op_margin_pct": 17.3}, {"plant": "Chattanooga", "year": 2025, "revenue_eur_m": 22718.3, "capex_eur_m": 1456.6999999999998, "op_margin_pct": 17.7}, {"plant": "Chattanooga", "year": 2026, "revenue_eur_m": 19779.699999999997, "capex_eur_m": 1472.6, "op_margin_pct": 17.0}, {"plant": "Leipzig", "year": 2022, "revenue_eur_m": 24956.099999999995, "capex_eur_m": 1592.1000000000001, "op_margin_pct": 18.7}, {"plant": "Leipzig", "year": 2023, "revenue_eur_m": 26111.099999999995, "capex_eur_m": 1881.4, "op_margin_pct": 17.0}, {"plant": "Leipzig", "year": 2024, "revenue_eur_m": 27271.3, "capex_eur_m": 1757.1000000000001, "op_margin_pct": 18.6}, {"plant": "Leipzig", "year": 2025, "revenue_eur_m": 27881.499999999996, "capex_eur_m": 1904.9999999999998, "op_margin_pct": 17.4}, {"plant": "Leipzig", "year": 2026, "revenue_eur_m": 25328.3, "capex_eur_m": 1865.9, "op_margin_pct": 16.6}, {"plant": "Sao Jose dos Campos", "year": 2022, "revenue_eur_m": 17059.2, "capex_eur_m": 1254.2, "op_margin_pct": 16.6}, {"plant": "Sao Jose dos Campos", "year": 2023, "revenue_eur_m": 17364.0, "capex_eur_m": 1272.4999999999998, "op_margin_pct": 16.5}, {"plant": "Sao Jose dos Campos", "year": 2024, "revenue_eur_m": 17742.899999999998, "capex_eur_m": 1152.2000000000003, "op_margin_pct": 16.9}, {"plant": "Sao Jose dos Campos", "year": 2025, "revenue_eur_m": 18158.6, "capex_eur_m": 1245.7, "op_margin_pct": 18.6}, {"plant": "Sao Jose dos Campos", "year": 2026, "revenue_eur_m": 15392.000000000002, "capex_eur_m": 1248.3, "op_margin_pct": 16.3}, {"plant": "Stuttgart", "year": 2022, "revenue_eur_m": 51044.3, "capex_eur_m": 3538.3, "op_margin_pct": 18.1}, {"plant": "Stuttgart", "year": 2023, "revenue_eur_m": 52279.600000000006, "capex_eur_m": 3601.4999999999995, "op_margin_pct": 17.3}, {"plant": "Stuttgart", "year": 2024, "revenue_eur_m": 53819.90000000001, "capex_eur_m": 4162.599999999999, "op_margin_pct": 17.1}, {"plant": "Stuttgart", "year": 2025, "revenue_eur_m": 54185.700000000004, "capex_eur_m": 3307.5, "op_margin_pct": 17.7}, {"plant": "Stuttgart", "year": 2026, "revenue_eur_m": 47896.9, "capex_eur_m": 3734.3000000000006, "op_margin_pct": 16.3}, {"plant": "Zwickau", "year": 2022, "revenue_eur_m": 32300.199999999997, "capex_eur_m": 2361.7999999999997, "op_margin_pct": 17.6}, {"plant": "Zwickau", "year": 2023, "revenue_eur_m": 33617.8, "capex_eur_m": 2361.7000000000003, "op_margin_pct": 17.3}, {"plant": "Zwickau", "year": 2024, "revenue_eur_m": 35027.2, "capex_eur_m": 2465.9000000000005, "op_margin_pct": 16.4}, {"plant": "Zwickau", "year": 2025, "revenue_eur_m": 37601.9, "capex_eur_m": 2594.2999999999997, "op_margin_pct": 17.4}, {"plant": "Zwickau", "year": 2026, "revenue_eur_m": 32827.4, "capex_eur_m": 2282.0, "op_margin_pct": 16.8}], LY=[{"year": 2022, "orders": 6221, "avg_lead_days": 29.1, "lt_variance": -0.4, "otif_pct": 60.1, "spend_eur": 700357228.0}, {"year": 2023, "orders": 6177, "avg_lead_days": 28.9, "lt_variance": -0.5, "otif_pct": 61.3, "spend_eur": 685772104.0}, {"year": 2024, "orders": 6099, "avg_lead_days": 28.9, "lt_variance": -0.4, "otif_pct": 60.8, "spend_eur": 680373737.0}, {"year": 2025, "orders": 6287, "avg_lead_days": 29.1, "lt_variance": -0.4, "otif_pct": 60.5, "spend_eur": 708865682.0}, {"year": 2026, "orders": 5216, "avg_lead_days": 29.1, "lt_variance": -0.4, "otif_pct": 61.1, "spend_eur": 589692168.0}], LM=[{"material": "Semiconductors", "orders": 5101, "avg_lead_days": 57.3, "otif_pct": 77.9, "spend_eur": 2455642333.0}, {"material": "Copper", "orders": 4917, "avg_lead_days": 34.1, "otif_pct": 68.0, "spend_eur": 444827017.0}, {"material": "Aluminum", "orders": 5039, "avg_lead_days": 27.7, "otif_pct": 62.2, "spend_eur": 137510407.0}, {"material": "Steel", "orders": 4960, "avg_lead_days": 21.3, "otif_pct": 55.3, "spend_eur": 47739585.0}, {"material": "Rubber", "orders": 5021, "avg_lead_days": 18.4, "otif_pct": 52.6, "spend_eur": 164809834.0}, {"material": "Plastics", "orders": 4962, "avg_lead_days": 14.8, "otif_pct": 48.2, "spend_eur": 114531743.0}], FC=[{"plant": "Chattanooga", "forecast_month": "2026-01", "forecast_revenue_eur_m": 1996.0}, {"plant": "Chattanooga", "forecast_month": "2026-02", "forecast_revenue_eur_m": 2001.4}, {"plant": "Chattanooga", "forecast_month": "2026-03", "forecast_revenue_eur_m": 2006.7}, {"plant": "Chattanooga", "forecast_month": "2026-04", "forecast_revenue_eur_m": 2012.0}, {"plant": "Chattanooga", "forecast_month": "2026-05", "forecast_revenue_eur_m": 2017.4}, {"plant": "Chattanooga", "forecast_month": "2026-06", "forecast_revenue_eur_m": 2022.7}, {"plant": "Chattanooga", "forecast_month": "2026-07", "forecast_revenue_eur_m": 2028.0}, {"plant": "Chattanooga", "forecast_month": "2026-08", "forecast_revenue_eur_m": 2033.3}, {"plant": "Chattanooga", "forecast_month": "2026-09", "forecast_revenue_eur_m": 2038.7}, {"plant": "Chattanooga", "forecast_month": "2026-10", "forecast_revenue_eur_m": 2044.0}, {"plant": "GROUP TARGET", "forecast_month": "2026-01", "forecast_revenue_eur_m": 1149.8}, {"plant": "GROUP TARGET", "forecast_month": "2026-02", "forecast_revenue_eur_m": 1192.3}, {"plant": "GROUP TARGET", "forecast_month": "2026-03", "forecast_revenue_eur_m": 1242.9}, {"plant": "GROUP TARGET", "forecast_month": "2026-04", "forecast_revenue_eur_m": 1307.9}, {"plant": "GROUP TARGET", "forecast_month": "2026-05", "forecast_revenue_eur_m": 1334.5}, {"plant": "GROUP TARGET", "forecast_month": "2026-06", "forecast_revenue_eur_m": 1374.6}, {"plant": "GROUP TARGET", "forecast_month": "2026-07", "forecast_revenue_eur_m": 1339.2}, {"plant": "GROUP TARGET", "forecast_month": "2026-08", "forecast_revenue_eur_m": 1318.4}, {"plant": "GROUP TARGET", "forecast_month": "2026-09", "forecast_revenue_eur_m": 1252.9}, {"plant": "GROUP TARGET", "forecast_month": "2026-10", "forecast_revenue_eur_m": 1197.7}, {"plant": "Leipzig", "forecast_month": "2026-01", "forecast_revenue_eur_m": 2534.0}, {"plant": "Leipzig", "forecast_month": "2026-02", "forecast_revenue_eur_m": 2542.5}, {"plant": "Leipzig", "forecast_month": "2026-03", "forecast_revenue_eur_m": 2550.9}, {"plant": "Leipzig", "forecast_month": "2026-04", "forecast_revenue_eur_m": 2559.3}, {"plant": "Leipzig", "forecast_month": "2026-05", "forecast_revenue_eur_m": 2567.8}, {"plant": "Leipzig", "forecast_month": "2026-06", "forecast_revenue_eur_m": 2576.2}, {"plant": "Leipzig", "forecast_month": "2026-07", "forecast_revenue_eur_m": 2584.7}, {"plant": "Leipzig", "forecast_month": "2026-08", "forecast_revenue_eur_m": 2593.1}, {"plant": "Leipzig", "forecast_month": "2026-09", "forecast_revenue_eur_m": 2601.6}, {"plant": "Leipzig", "forecast_month": "2026-10", "forecast_revenue_eur_m": 2610.0}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-01", "forecast_revenue_eur_m": 1554.8}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-02", "forecast_revenue_eur_m": 1557.2}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-03", "forecast_revenue_eur_m": 1559.7}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-04", "forecast_revenue_eur_m": 1562.1}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-05", "forecast_revenue_eur_m": 1564.6}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-06", "forecast_revenue_eur_m": 1567.0}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-07", "forecast_revenue_eur_m": 1569.4}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-08", "forecast_revenue_eur_m": 1571.9}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-09", "forecast_revenue_eur_m": 1574.3}, {"plant": "Sao Jose dos Campos", "forecast_month": "2026-10", "forecast_revenue_eur_m": 1576.8}, {"plant": "Stuttgart", "forecast_month": "2026-01", "forecast_revenue_eur_m": 4769.1}, {"plant": "Stuttgart", "forecast_month": "2026-02", "forecast_revenue_eur_m": 4778.6}, {"plant": "Stuttgart", "forecast_month": "2026-03", "forecast_revenue_eur_m": 4788.1}, {"plant": "Stuttgart", "forecast_month": "2026-04", "forecast_revenue_eur_m": 4797.6}, {"plant": "Stuttgart", "forecast_month": "2026-05", "forecast_revenue_eur_m": 4807.2}, {"plant": "Stuttgart", "forecast_month": "2026-06", "forecast_revenue_eur_m": 4816.7}, {"plant": "Stuttgart", "forecast_month": "2026-07", "forecast_revenue_eur_m": 4826.2}, {"plant": "Stuttgart", "forecast_month": "2026-08", "forecast_revenue_eur_m": 4835.7}, {"plant": "Stuttgart", "forecast_month": "2026-09", "forecast_revenue_eur_m": 4845.2}, {"plant": "Stuttgart", "forecast_month": "2026-10", "forecast_revenue_eur_m": 4854.7}, {"plant": "Zwickau", "forecast_month": "2026-01", "forecast_revenue_eur_m": 3347.1}, {"plant": "Zwickau", "forecast_month": "2026-02", "forecast_revenue_eur_m": 3359.5}, {"plant": "Zwickau", "forecast_month": "2026-03", "forecast_revenue_eur_m": 3372.0}, {"plant": "Zwickau", "forecast_month": "2026-04", "forecast_revenue_eur_m": 3384.4}, {"plant": "Zwickau", "forecast_month": "2026-05", "forecast_revenue_eur_m": 3396.9}, {"plant": "Zwickau", "forecast_month": "2026-06", "forecast_revenue_eur_m": 3409.3}, {"plant": "Zwickau", "forecast_month": "2026-07", "forecast_revenue_eur_m": 3421.8}, {"plant": "Zwickau", "forecast_month": "2026-08", "forecast_revenue_eur_m": 3434.2}, {"plant": "Zwickau", "forecast_month": "2026-09", "forecast_revenue_eur_m": 3446.7}, {"plant": "Zwickau", "forecast_month": "2026-10", "forecast_revenue_eur_m": 3459.1}], DOWN=[{"plant": "Zwickau", "events": 220, "avg_downtime_min": 16.7, "units": 50079}, {"plant": "Chattanooga", "events": 244, "avg_downtime_min": 15.3, "units": 53925}, {"plant": "Stuttgart", "events": 248, "avg_downtime_min": 15.2, "units": 57069}, {"plant": "Leipzig", "events": 250, "avg_downtime_min": 15.1, "units": 56454}, {"plant": "Sao Jose dos Campos", "events": 238, "avg_downtime_min": 14.3, "units": 55778}], DQ=[{"check": "dup_financials", "violations": 0}, {"check": "dup_orders", "violations": 0}, {"check": "fin_rows_raw", "violations": 290}, {"check": "fin_rows_clean", "violations": 290}, {"check": "orders_rows_raw", "violations": 30000}, {"check": "orders_rows_clean", "violations": 30000}];
+cards(document.getElementById('kA'), [
+  {k:'Revenue 2026 (EUR m)', v:'141224'},
+  {k:'5-yr revenue CAGR', v:'-0.8%'},
+  {k:'Op margin 2026', v:'16.6%'},
+  {k:'OTIF 2026', v:'61.1%'}]);
+document.getElementById('c_rev').innerHTML = line(null, [{name:'Revenue EUR m', x:FY.map(r=>r.year), values:FY.map(r=>r.revenue_eur_m)}], {title:'Revenue by year — EUR millions'});
+document.getElementById('c_margin').innerHTML = line(null, [
+  {name:'Gross margin %', x:FY.map(r=>r.year), values:FY.map(r=>r.gross_margin_pct)},
+  {name:'Operating margin %', x:FY.map(r=>r.year), values:FY.map(r=>r.op_margin_pct)}], {title:'Margins by year — %'});
+document.getElementById('c_capex').innerHTML = bar(null, {labels:FP.filter(r=>r.year===2026).map(r=>r.plant),
+  values:FP.filter(r=>r.year===2026).map(r=>r.capex_eur_m), title:'CAPEX 2026 by plant — EUR m'});
+document.getElementById('c_lt').innerHTML = bar(null, {labels:LY.map(r=>r.year),
+  values:LY.map(r=>r.avg_lead_days), title:'Avg lead time by year — days'});
+document.getElementById('c_otif').innerHTML = bar(null, {labels:LY.map(r=>r.year),
+  values:LY.map(r=>r.otif_pct), title:'OTIF % by year', unit:'%'});
+table(document.getElementById('t_lt'), ['material','orders','avg_lead_days','otif_pct','spend_eur'], LM);
+table(document.getElementById('t_down'), ['plant','events','avg_downtime_min','units'], DOWN);
+const fcP = FC.filter(r=>r.plant==='GROUP TARGET').map(r=>r.forecast_revenue_eur_m);
+const fcS = {};
+FC.filter(r=>r.plant!=='GROUP TARGET').forEach(r=>{ fcS[r.plant] = fcS[r.plant] || []; fcS[r.plant].push(r.forecast_revenue_eur_m); });
+const fcKeys = Object.keys(fcS);
+const fcSum = fcS[fcKeys[0]].map((_, i) => fcKeys.reduce((a, k) => a + fcS[k][i], 0));
+const months = FC.filter(r=>r.plant==='GROUP TARGET').map(r=>r.forecast_month);
+document.getElementById('c_fc').innerHTML = line(null,
+  [{name:'2027 forecast (sum of plants)', x:months, values:fcSum},
+   {name:'GROUP TARGET +8% YoY', x:months, values:fcP}], {title:'2027 monthly revenue forecast vs target — EUR m'});
+table(document.getElementById('t_dq'), ['check','violations'], DQ);
+</script></body></html>

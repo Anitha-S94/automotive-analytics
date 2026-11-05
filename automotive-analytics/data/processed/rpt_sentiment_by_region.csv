@@ -1,0 +1,7 @@
+region,reviews,avg_rating,pct_positive,avg_sentiment_score
+APAC,836,3.06,47.8,0.04
+NAFTA,871,3.01,47.2,-0.01
+EU-East,777,3.09,46.7,-0.02
+EU-West,847,2.96,45.9,-0.15
+DACH,845,2.97,45.3,-0.17
+Rest of World,824,3.0,44.9,-0.2
