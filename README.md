@@ -38,6 +38,9 @@ the DAX measures in `powerbi/*.dax`, and the page-by-page build spec in
 Publish. `powerbi/INTERACTIVE_DASHBOARDS.html` is a browser version that works
 immediately on this machine.
 
+**Scope & how to run:** see `docs/PROJECT_SCOPE.md` (full scope, in/out of scope,
+step-by-step run commands, Power BI steps, deferred GitHub publish).
+
 ## Use case 1 — Offshore grid load & connector maintenance
 - Dataset: 128,448 hourly rows, 8 export cables (320/525 kV), 2025-01 → 2026-10,
   weather-driven wind generation, storm derating, overload hours.
